@@ -47,35 +47,64 @@ router.post('/login', (req, res) => {
 
 router.post('/signup', function(req, res) {
   var newSubject = new Subject(req.body);
-  Subject.findOne({
-    birth_id:newSubject.birth_id
-  },(err,subject)=>{
-    if(err){
-      console.error(err);
+  addSubject(newSubject, (err) => {
+    if (err instanceof Error) {
+      console.log(err);
       res.json({
-        saved:false
+        saved: false
       });
-    }else if (subject) {
-      console.error('subject with birth_id '+subject.birth_id+' exists');
+    } else {
       res.json({
-        saved:false
-      });
-    }else{
-      newSubject.save((err, subject) => {
-        if (err) {
-          console.error(err);
-          res.json({
-            saved: false
-          });
-        } else {
-          console.log("subject with birth_id " + subject.birth_id + " saved");
-          res.json({
-            saved: true
-          });
-        }
+        saved: true
       });
     }
   });
 });
 
-module.exports = router;
+function addSubject(newSubject, callback) {
+  var result = checkSubjectExists(newSubject.birth_id);
+  if (result instanceof Error) {
+    callback(result);
+  } else {
+    saveSubject(newSubject, (err) => {
+      if (err instanceof Error) {
+        callback(err);
+      } else {
+        callback(null);
+      }
+    });
+  }
+}
+
+function checkSubjectExists(birth_id) {
+  Subject.findOne({
+    birth_id: birth_id
+  }, (err,subject) => {
+    if (err) {
+      console.error(err);
+      return err;
+    } else if (subject) {
+      console.error('subject with birth_id ' + subject.birth_id + ' exists');
+      return new Error('Subject already exists');
+    } else {
+      return null;
+    }
+  });
+}
+
+function saveSubject(newSubject, callback) {
+  newSubject.save((err, subject) => {
+    if (err) {
+      console.error(err);
+      callback(err);
+    } else {
+      console.log("subject with birth_id " + subject.birth_id + " saved");
+      callback(0);
+    }
+  });
+}
+
+module.exports = {
+  addSubject,
+  router
+};

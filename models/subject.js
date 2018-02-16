@@ -7,9 +7,10 @@ const SubjectSchema = new Schema({
   password: String,
   class: Number,
   profession: String,
+  gender: Number,
   picture: String,
   patriot_index: Number,
-  status: String,
+  alive: Boolean,
   informer: Boolean
 });
 
