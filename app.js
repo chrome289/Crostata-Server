@@ -17,9 +17,12 @@ var config = require('config');
 var app = express();
 
 app.set('port', process.env.PORT || 3000);
-var server = app.listen(app.get('port'), function() {
-  console.log('Express server listening on port ' + server.address().port);
-});
+
+if (!module.parent) {
+  var server = app.listen(app.get('port'), function() {
+    console.log('Express server listening on port ' + server.address().port);
+  });
+}
 
 mongoose.connect(config.database);
 
@@ -40,7 +43,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index);
 app.use('/users', users);
 app.use('/api/auth', auth.router);
-app.use('/bot',bot);
+app.use('/bot', bot);
 
 
 // catch 404 and forward to error handler

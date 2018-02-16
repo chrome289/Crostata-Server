@@ -5,7 +5,7 @@ const SubjectSchema = new Schema({
   birth_id: String,
   name: String,
   password: String,
-  class: Number,
+  dob: Date,
   profession: String,
   gender: Number,
   picture: String,
@@ -14,6 +14,6 @@ const SubjectSchema = new Schema({
   informer: Boolean
 });
 
-module.exports = mongoose.model(
+module.exports = mongoose.models.Subject || mongoose.model(
   'Subject', SubjectSchema
 );
