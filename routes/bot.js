@@ -3,6 +3,8 @@ var router = express.Router();
 var randomName = require('node-random-name');
 var randomNumberGen = require('random-seed');
 var randomPasswordGen = require('generate-password');
+var logger = require('../utils/logger');
+
 var Auth = require('./auth');
 var Subject = require('../models/subject');
 
@@ -10,7 +12,7 @@ const professions = ['PEASANT', 'MERCHANT', 'SOLDIER', 'REBEL', 'OLIGARCH', 'NON
 
 router.get('/generate', (req, res) => {
   var newSubject = new Subject();
-  //console.log(randomNumber);
+  //logger.debug(randomNumber);
   var randomNumber = ~~((randomNumberGen.create().random() * 80000000) + 10000000);
   newSubject.birth_id = "0" + (randomNumber + 10000000);
   newSubject.name = randomName({
@@ -34,7 +36,7 @@ router.get('/generate', (req, res) => {
 
   Auth.addSubject(newSubject, (err) => {
     if (err instanceof Error) {
-      console.error("Exception");
+      logger.error("Exception");
       res.send('NOT DONE');
     } else {
       res.send('done');

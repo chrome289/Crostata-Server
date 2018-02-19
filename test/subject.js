@@ -1,13 +1,18 @@
+
+/*jshint expr: true*/
 process.env.NODE_ENV = 'test';
 
 var mongoose = require('mongoose');
-var Subject = require('../models/subject');
-
 var chai = require('chai');
 var chaiHttp = require('chai-http');
-var app = require('../app');
-var should = chai.should();
 
+var logger = require('../utils/logger');
+
+var Subject = require('../models/subject');
+
+var app = require('../app');
+
+var should = chai.should();
 chai.use(chaiHttp);
 
 var aSubject = {
@@ -27,9 +32,9 @@ describe('subject tests', () => {
   beforeEach((done) => {
     Subject.remove({}, (err) => {
       if (err)
-        console.error("TEST: Database not cleared " + err);
+        logger.error("TEST: Database not cleared " + err);
       else {
-        console.log("TEST: Datebase cleared");
+        logger.debug("TEST: Datebase cleared");
       }
       done();
     });

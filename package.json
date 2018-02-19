@@ -9,20 +9,23 @@
   },
   "dependencies": {
     "body-parser": "~1.18.2",
+    "compression": "^1.7.2",
     "config": "^1.29.4",
     "cookie-parser": "~1.4.3",
-    "debug": "~2.6.9",
+    "debug": "^2.6.9",
     "express": "~4.15.5",
     "generate-password": "^1.4.0",
+    "helmet": "^3.11.0",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.1.1",
     "mongodb": "^3.0.2",
     "mongoose": "^5.0.5",
-    "morgan": "~1.9.0",
+    "morgan": "^1.9.0",
     "node-random-name": "^1.0.1",
     "nodemon": "^1.14.12",
     "random-seed": "^0.3.0",
-    "serve-favicon": "~2.4.5"
+    "serve-favicon": "~2.4.5",
+    "winston": "^2.4.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",
