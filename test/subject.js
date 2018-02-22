@@ -1,4 +1,4 @@
-
+//force jshint to uee es6
 /*jshint expr: true*/
 process.env.NODE_ENV = 'test';
 

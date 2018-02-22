@@ -13,6 +13,7 @@ const professions = ['PEASANT', 'MERCHANT', 'SOLDIER', 'REBEL', 'OLIGARCH', 'NON
 router.get('/generate', (req, res) => {
   var newSubject = new Subject();
   //logger.debug(randomNumber);
+  //generate a random number
   var randomNumber = ~~((randomNumberGen.create().random() * 80000000) + 10000000);
   newSubject.birth_id = "0" + (randomNumber + 10000000);
   newSubject.name = randomName({
@@ -26,7 +27,7 @@ router.get('/generate', (req, res) => {
     symbols: true
   });
   const currentDate = new Date();
-  newSubject.dob = new Date(randomNumberGen.create().intBetween(-1636986312,(currentDate.getTime())));
+  newSubject.dob = new Date(randomNumberGen.create().intBetween(-1636986312, (currentDate.getTime())));
   newSubject.profession = professions[getProfessionID(randomNumber)];
   newSubject.gender = (randomNumber % 2 == 0) ? 0 : 1;
   newSubject.picture = newSubject.birth_id + ".jpg";
@@ -34,6 +35,7 @@ router.get('/generate', (req, res) => {
   newSubject.alive = (randomNumber % 10 == 0) ? 0 : 1;
   newSubject.informer = (randomNumber % 10 == 0) ? 1 : 0;
 
+  //call addSubject function from auth
   Auth.addSubject(newSubject, (err) => {
     if (err instanceof Error) {
       logger.error("Exception");
@@ -44,6 +46,7 @@ router.get('/generate', (req, res) => {
   });
 });
 
+//probabilty for professions
 function getProfessionID(randomNumber) {
   if (randomNumber % 5 == 0) {
     return 2;
