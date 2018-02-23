@@ -51,6 +51,22 @@ function submitTextPostFailure(res, resultCode) {
 
 
 
+function submitImagePostSuccess(res) {
+  res.json({
+    success: true,
+    resultCode: 0
+  });
+}
+
+function submitImagePostFailure(res, resultCode) {
+  res.json({
+    success: false,
+    resultCode: resultCode
+  });
+}
+
+
+
 function sendTokenSuccess(res, token) {
   res.json({
     resultCode: 0,
@@ -75,6 +91,9 @@ module.exports = {
 
   submitTextPostSuccess,
   submitTextPostFailure,
+
+  submitImagePostSuccess,
+  submitImagePostFailure,
 
   sendTokenSuccess,
   sendTokenFailure

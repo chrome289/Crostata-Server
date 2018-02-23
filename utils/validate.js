@@ -13,6 +13,12 @@ function validateTextPost(req) {
     return flag;
 }
 
+function validateImagePost(req) {
+  var flag = true;
+  if (req.body.birth_id.length == 9 && !isNaN(req.body.birth_id))
+    return flag;
+}
+
 
 function validateGetPost(req) {
   var flag = true;
@@ -51,5 +57,6 @@ function validateNewUser(newSubject) {
 module.exports = {
   validateNewUser,
   validateGetPost,
-  validateTextPost
+  validateTextPost,
+  validateImagePost
 };

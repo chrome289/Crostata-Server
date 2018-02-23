@@ -3,6 +3,24 @@ var path = require('path');
 var logger = require('../utils/logger');
 var bcrypt = require('bcrypt');
 var moment = require('moment');
+var multer = require('multer');
+var fs = require('fs');
+var shortid = require('shortid');
+
+var diskStorage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    return cb(null, './posts/images/');
+  },
+  filename: (req, file, cb) => {
+    const ext = '.jpg';
+    return cb(null, shortid.generate() + 'UTC' + new Date().getTime());
+  }
+});
+
+var upload = multer({
+  storage: diskStorage
+}).single('file');
+
 var router = express.Router();
 
 var Post = require('../models/post');
@@ -12,29 +30,31 @@ var validate = require('../utils/validate');
 
 router.post('/submitTextPost', (req, res) => {
   var postContent = req.body.postContent;
+  const ext = '.txt';
   if (validate.validateTextPost(req)) {
-    bcrypt.hash(postContent + moment().utc().valueOf(), 2, (err, hash) => {
+    var filename = shortid.generate() + 'UTC' + new Date().getTime();
+    var newPost = new Post({
+      post_id: filename,
+      creator_id: req.body.birth_id,
+      time_created: moment().utc().valueOf(),
+      content_type: "TO",
+      text_url: filename,
+      pic_url: "",
+      up_votes: 0,
+      down_votes: 0,
+      is_censored: false,
+      is_generated: req.body.generate
+    });
+    //logger.silly('date' + newPost.time_created + "-$$$-" + moment.format());
+    fs.writeFile('./posts/texts/' + filename, postContent, (err) => {
       if (err) {
-        logger.debug('Routes:content:submitTextPost:bcrypt --' + err);
-        reply.submitTextPostFailure('SERVER_ERROR', 1);
+        logger.debug('Routes:content:submitTextPost:writeFile --' + err);
+        reply.submitTextPostFailure(res, 1);
       } else {
-        var newPost = new Post({
-          post_id: hash,
-          creator_id: req.body.birth_id,
-          time_created: moment().utc().valueOf(),
-          content_type: "TO",
-          text_url: "/posts/to/" + hash,
-          pic_url: "",
-          up_votes: 0,
-          down_votes: 0,
-          is_censored: false,
-          is_generated: (req.body.generate == 0) ? false : true
-        });
-        //logger.silly('date' + newPost.time_created + "-$$$-" + moment.format());
         newPost.save((err, post) => {
           if (err) {
             logger.debug('Routes:content:submitTextPost:mongoose --' + err);
-            reply.submitTextPostFailure('SERVER_ERROR', 1);
+            reply.submitTextPostFailure(res, 1);
           } else {
             logger.debug("Routes:content:submitTextPost -- Post saved -> " + post.post_id);
             reply.submitTextPostSuccess(res);
@@ -42,10 +62,52 @@ router.post('/submitTextPost', (req, res) => {
         });
       }
     });
+
   } else {
-    reply.submitTextPostFailure('INVALID_PARAMS', 2);
+    reply.submitTextPostFailure(res, 2);
   }
 });
+
+
+router.post('/submitImagePost', (req, res) => {
+  if (true) {
+    upload(req, res, (err) => {
+      if (err) {
+        logger.debug('Routes:content:submitTextPost:multer --' + err);
+        reply.submitImagePostFailure(res, 1);
+      } else {
+        //logger.silly(req.file.filename);
+        var filename = req.file.filename;
+        var newPost = new Post({
+          post_id: filename,
+          creator_id: req.body.birth_id,
+          time_created: moment().utc().valueOf(),
+          content_type: 'IO',
+          text_url: '',
+          pic_url: filename,
+          up_votes: 0,
+          down_votes: 0,
+          is_censored: false,
+          is_generated: req.body.generate
+        });
+        //logger.silly('date' + newPost.time_created + "-$$$-" + moment.format());
+        newPost.save((err, post) => {
+          if (err) {
+            logger.debug('Routes:content:submitTextPost:mongoose --' + err);
+            reply.submitImagePostFailure(res, 1);
+          } else {
+            logger.debug('Routes:content:submitTextPost -- Post saved -> ' + post.post_id);
+            reply.submitImagePostSuccess(res);
+          }
+        });
+      }
+    });
+  } else {
+    reply.submitImagePostFailure(res, 2);
+  }
+});
+
+
 
 router.post('/getPosts', (req, res) => {
   if (validate.validateGetPost(req)) {
@@ -66,7 +128,7 @@ router.post('/getPosts', (req, res) => {
       .exec((err, posts) => {
         if (err) {
           logger.error(err);
-          reply.getPostFailure('SERVER_ERROR', 1);
+          reply.getPostFailure(res, 1);
         } else {
           for (var x = 0; x < posts.length; x++) {
             postArray.push({
@@ -79,10 +141,9 @@ router.post('/getPosts', (req, res) => {
       });
 
   } else {
-    reply.getPostFailure('INVALID_PARAMS', 2);
+    reply.getPostFailure(res, 2);
   }
 });
-
 
 module.exports = {
   router
