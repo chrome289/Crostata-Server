@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var moment = require('moment');
 var Subject = require('../models/subject');
+var Post = require('../models/post');
+var logger = require('../utils/logger');
 
 const professions = ['PEASANT', 'MERCHANT', 'SOLDIER', 'REBEL', 'OLIGARCH', 'NONE'];
 
@@ -17,6 +19,30 @@ function validateImagePost(req) {
   var flag = true;
   if (req.body.birth_id.length == 9 && !isNaN(req.body.birth_id))
     return flag;
+}
+
+function validateComboPost(req){
+  var flag = true;
+  if (req.body.postContent.length == 0 || req.body.postContent.length > 40000)
+    flag = false;
+  if (req.body.birth_id.length == 9 && !isNaN(req.body.birth_id))
+    return flag;
+}
+
+function validateImageID(req) {
+  return new Promise((resolve, reject) => {
+    Post.findOne({
+      post_id: req.query.post_id
+    }, (err, post) => {
+      if (err) {
+        reject(err);
+      } else if (post == null) {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
+  });
 }
 
 
@@ -58,5 +84,7 @@ module.exports = {
   validateNewUser,
   validateGetPost,
   validateTextPost,
-  validateImagePost
+  validateImagePost,
+  validateComboPost,
+  validateImageID
 };

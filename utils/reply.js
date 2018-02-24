@@ -69,6 +69,7 @@ function submitImagePostFailure(res, resultCode) {
 
 function sendTokenSuccess(res, token) {
   res.json({
+    success: true,
     resultCode: 0,
     tokenValue: token
   });
@@ -76,6 +77,7 @@ function sendTokenSuccess(res, token) {
 
 function sendTokenFailure(res, resultCode) {
   res.json({
+    success: false,
     resultCode: resultCode,
     tokenValue: ""
   });

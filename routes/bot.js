@@ -3,8 +3,9 @@ var router = express.Router();
 var randomName = require('node-random-name');
 var randomNumberGen = require('random-seed');
 var randomPasswordGen = require('generate-password');
-var logger = require('../utils/logger');
+var chance = require('chance');
 
+var logger = require('../utils/logger');
 var Auth = require('./auth');
 var Subject = require('../models/subject');
 
@@ -44,6 +45,10 @@ router.get('/generate', (req, res) => {
       res.send('done');
     }
   });
+});
+
+router.get('/generatePosts', (req,res)=>{
+  
 });
 
 //probabilty for professions

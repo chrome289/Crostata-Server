@@ -75,7 +75,7 @@ app.use('/bot', bot);
 
 app.use('/api/auth', auth.router);
 //use tokenMiddleware only when auth is done already
-app.use(tokenMiddleware);
+//app.use(tokenMiddleware);
 //app.use('/api/auth/loginToken', auth.router);
 app.use('/api/content', content.router);
 

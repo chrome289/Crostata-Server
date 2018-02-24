@@ -1,5 +1,6 @@
 //force jshint to uee es6
 /*jshint expr: true*/
+
 process.env.NODE_ENV = 'test';
 
 var mongoose = require('mongoose');
@@ -34,7 +35,7 @@ describe('subject tests', () => {
       if (err)
         logger.error("TEST: Database not cleared " + err);
       else {
-        logger.debug("TEST: Datebase cleared");
+        logger.debug("TEST: Database cleared");
       }
       done();
     });
@@ -48,8 +49,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(true);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(true);
 
           chai.request(app)
             .post('/api/auth/signup')
@@ -58,8 +59,8 @@ describe('subject tests', () => {
               res.should.have.status(200);
               res.should.be.json;
               res.body.should.be.a('object');
-              res.body.should.have.property('saved');
-              res.body.saved.should.equal(false);
+              res.body.should.have.property('success');
+              res.body.success.should.equal(false);
               done();
             });
         }).timeout(3000);
@@ -77,8 +78,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -92,8 +93,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -110,8 +111,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -128,8 +129,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -143,8 +144,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -161,8 +162,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -176,8 +177,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -194,8 +195,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -212,8 +213,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -227,8 +228,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -242,8 +243,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -260,8 +261,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -278,8 +279,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -296,8 +297,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
@@ -312,8 +313,8 @@ describe('subject tests', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('saved');
-          res.body.saved.should.equal(false);
+          res.body.should.have.property('success');
+          res.body.success.should.equal(false);
           done();
         });
     }).timeout(3000);
