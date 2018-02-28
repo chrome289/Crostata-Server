@@ -27,11 +27,11 @@ router.post('/login', (req, res) => {
     if (err) {
       //database error
       logger.error('routes:auth:login:mongoose -- ' + err);
-      reply.sendTokenFailure(res, 1);
+      reply.sendTokenFailure(res, 500);
     } else if (!subject) {
       //user doesn't exists
       logger.info('routes:auth:login:findOne -- User doesn\'t exist -> ' + req.body.birth_id);
-      reply.sendTokenFailure(res, 2);
+      reply.sendTokenFailure(res, 404);
     } else {
       bcrypt.compare(req.body.password, subject.password, (err, result) => {
         if (result) {
@@ -51,7 +51,7 @@ router.post('/login', (req, res) => {
         } else {
           //password incorrect
           logger.info('routes:auth:login:findOne:bcrypt -- Password incorrect for birth_id -> ' + req.body.birth_id.toString());
-          reply.sendTokenFailure(res, 3);
+          reply.sendTokenFailure(res, 403);
         }
       });
     }
@@ -66,11 +66,11 @@ router.post('/signup', function(req, res) {
     subjectExists(newSubject).then((exists) => {
         //if exists return failure
         if (exists)
-          reply.sendTokenFailure(res, 2);
+          reply.sendTokenFailure(res, 400);
         else {
           //hash password and save in db
           hashPassword(newSubject)
-            .then(saveSubjectDB(newSubject))
+            .then((newSubject)=>saveSubjectDB(newSubject))
             .then(() => {
               reply.sendSuccess(res);
             });
@@ -78,12 +78,12 @@ router.post('/signup', function(req, res) {
       })
       .catch((err) => {
         logger.error(err);
-        reply.sendTokenFailure(res, 1);
+        reply.sendTokenFailure(res, 500);
       });
   } else {
     //validation failed.
     logger.error('routes:auth:signup -- validation ');
-    reply.sendTokenFailure(res, 1);
+    reply.sendTokenFailure(res, 400);
   }
 });
 
@@ -124,7 +124,7 @@ hashPassword = (newSubject) => new Promise((resolve) => {
     } else {
       logger.debug('routes:auth:hashPassword:bcrypt -- password hashed');
       newSubject.password = passwordHash;
-      resolve(passwordHash);
+      resolve(newSubject);
     }
   });
 });

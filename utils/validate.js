@@ -21,7 +21,7 @@ function validateImagePost(req) {
     return flag;
 }
 
-function validateComboPost(req){
+function validateComboPost(req) {
   var flag = true;
   if (req.body.postContent.length == 0 || req.body.postContent.length > 40000)
     flag = false;
@@ -29,7 +29,7 @@ function validateComboPost(req){
     return flag;
 }
 
-function validateImageID(req) {
+function validateImageId(req) {
   return new Promise((resolve, reject) => {
     Post.findOne({
       post_id: req.query.post_id
@@ -40,6 +40,45 @@ function validateImageID(req) {
         resolve(false);
       } else {
         resolve(true);
+      }
+    });
+  });
+}
+
+function validateBirthId(req) {
+  return new Promise((resolve, reject) => {
+    Subject.findOne({
+      birth_id: req.body.birth_id
+    }, (err, subject) => {
+      if (err) {
+        reject(500);
+      } else if (subject == null) {
+        resolve(400);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+
+function validateGetProfileImage(req) {
+  return new Promise((resolve, reject) => {
+    Subject.findOne({
+      birth_id: req.query.birth_id
+    }, (err, post) => {
+      if (err) {
+        logger.error(err);
+        reject(500);
+      } else if (post == null) {
+        reject(400);
+      } else {
+        if (req.query.dimen < 48 || req.query.dimen > 1024)
+          reject(400);
+        else if (req.query.quality < 1 || req.query.quality > 100)
+          reject(400);
+        else
+          resolve();
       }
     });
   });
@@ -86,5 +125,7 @@ module.exports = {
   validateTextPost,
   validateImagePost,
   validateComboPost,
-  validateImageID
+  validateImageId,
+  validateBirthId,
+  validateGetProfileImage
 };

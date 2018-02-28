@@ -1,34 +1,33 @@
 var express = require('express');
 var router = express.Router();
 
+var logger = require('../utils/logger');
+
 function sendSuccess(res) {
-  res.json({
-    success: true,
-    resultCode: 0
+  res.status(200).json({
+    success: true
   });
 }
 
 function sendFailure(res, resultCode) {
-  res.json({
-    success: false,
-    resultCode: resultCode
+  res.status(resultCode).json({
+    success: false
   });
 }
 
 
 
 function getPostSuccess(res, postArray) {
-  res.json({
+  logger.debug('postarray size '+postArray.length);
+  res.status(200).json({
     success: true,
-    resultCode: 0,
     posts: postArray
   });
 }
 
 function getPostFailure(res, resultCode) {
-  res.json({
+  res.status(resultCode).json({
     success: false,
-    resultCode: resultCode,
     posts: []
   });
 }
@@ -36,49 +35,43 @@ function getPostFailure(res, resultCode) {
 
 
 function submitTextPostSuccess(res) {
-  res.json({
-    success: true,
-    resultCode: 0
+  res.status(200).json({
+    success: true
   });
 }
 
 function submitTextPostFailure(res, resultCode) {
-  res.json({
-    success: false,
-    resultCode: resultCode
+  res.status(resultCode).json({
+    success: false
   });
 }
 
 
 
 function submitImagePostSuccess(res) {
-  res.json({
-    success: true,
-    resultCode: 0
+  res.status(200).json({
+    success: true
   });
 }
 
 function submitImagePostFailure(res, resultCode) {
-  res.json({
-    success: false,
-    resultCode: resultCode
+  res.status(resultCode).json({
+    success: false
   });
 }
 
 
 
 function sendTokenSuccess(res, token) {
-  res.json({
+  res.status(200).json({
     success: true,
-    resultCode: 0,
     tokenValue: token
   });
 }
 
 function sendTokenFailure(res, resultCode) {
-  res.json({
+  res.status(resultCode).json({
     success: false,
-    resultCode: resultCode,
     tokenValue: ""
   });
 }

@@ -57,6 +57,11 @@ typings/
 # dotenv environment variables file
 .env
 
-#config directory
+# config directory
 config/
 
+# post data
+posts/
+
+# images
+images/

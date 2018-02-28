@@ -1,13 +1,16 @@
 /*jshint loopfunc: true */
 
-var express = require('express');
-var path = require('path');
-var logger = require('../utils/logger');
-var bcrypt = require('bcrypt');
-var moment = require('moment');
-var multer = require('multer');
-var fs = require('fs');
+const express = require('express');
+const path = require('path');
+const logger = require('../utils/logger');
+const bcrypt = require('bcrypt');
+const multer = require('multer');
+const fs = require('fs');
+const util = require('util');
+const sharp = require('sharp');
+
 var shortid = require('shortid');
+var moment = require('moment');
 
 var diskStorage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -55,15 +58,15 @@ router.post('/submitTextPost', (req, res) => {
         reply.submitImagePostSuccess(res);
       }, (error) => {
         logger.debug('Routes:content:submitTextPost:mongoose --' + err);
-        reply.submitImagePostFailure(res, 1);
+        reply.submitImagePostFailure(res, 500);
       });
     }, (error) => {
       logger.debug('Routes:content:submitTextPost:writeFile --' + err);
-      reply.submitTextPostFailure(res, 1);
+      reply.submitTextPostFailure(res, 500);
     });
 
   } else {
-    reply.submitTextPostFailure(res, 2);
+    reply.submitTextPostFailure(res, 400);
   }
 });
 
@@ -72,7 +75,7 @@ router.post('/submitImagePost', (req, res) => {
     if (validate.validateImagePost(req)) {
       if (err) {
         logger.debug('Routes:content:submitImagePost:multer --' + err);
-        reply.submitImagePostFailure(res, 1);
+        reply.submitImagePostFailure(res, 500);
       } else {
         //logger.silly(req.file.filename);
         var filename = req.file.filename;
@@ -94,11 +97,11 @@ router.post('/submitImagePost', (req, res) => {
           reply.submitImagePostSuccess(res);
         }, (error) => {
           logger.debug('Routes:content:submitImagePost:mongoose --' + err);
-          reply.submitImagePostFailure(res, 1);
+          reply.submitImagePostFailure(res, 500);
         });
       }
     } else {
-      reply.submitImagePostFailure(res, 2);
+      reply.submitImagePostFailure(res, 400);
     }
   });
 });
@@ -106,10 +109,9 @@ router.post('/submitImagePost', (req, res) => {
 router.post('/submitComboPost', (req, res) => {
   upload(req, res, (err) => {
     if (validate.validateComboPost(req)) {
-
       if (err) {
         logger.debug('Routes:content:submitComboPost:multer --' + err);
-        reply.submitImagePostFailure(res, 1);
+        reply.submitImagePostFailure(res, 500);
       } else {
         var postContent = req.body.postContent;
         const ext = '.txt';
@@ -134,49 +136,62 @@ router.post('/submitComboPost', (req, res) => {
             reply.submitImagePostSuccess(res);
           }, (error) => {
             logger.debug('Routes:content:submitComboPost:mongoose --' + err);
-            reply.submitImagePostFailure(res, 1);
+            reply.submitImagePostFailure(res, 500);
           });
         }, (error) => {
           logger.debug('Routes:content:submitComboPost:writeFile --' + err);
-          reply.submitTextPostFailure(res, 1);
+          reply.submitTextPostFailure(res, 500);
         });
       }
     } else {
-      reply.submitImagePostFailure(res, 2);
+      reply.submitImagePostFailure(res, 400);
     }
   });
 
 });
 
-router.post('/getNextPosts', (req, res) => {
+router.post('/getNextPostsList', (req, res) => {
   if (validate.validateGetPost(req)) {
     var noOfPosts = Number(req.body.noOfPosts);
+
+    //converting to native date because moment's date doesn't work for some reason
     var lastDatetime = moment.unix(req.body.lastTimestamp)
-      .utc()
-      .format('YYYY-MM-DD HH:mm:ss.SSS');
-    //logger.silly(lastDatetime);
-    Post.find({
-        time_created: {
-          $gt: lastDatetime
+      .toDate();
+
+    logger.silly("lastts " + lastDatetime + "------" + new Date(req.body.lastTimestamp * 1000));
+    Post.aggregate([{
+        $match: {
+          time_created: {
+            '$lt': lastDatetime
+          }
         }
-      })
+      }, {
+        $lookup: {
+          "from": "subjects",
+          "localField": "creator_id",
+          "foreignField": "birth_id",
+          "as": "creator"
+        }
+      }])
       .sort('-time_created')
       .limit(noOfPosts)
       .exec((err, posts) => {
         if (err) {
           logger.error(err);
-          reply.getPostFailure(res, 1);
+          reply.getPostFailure(res, 500);
         } else {
+          logger.debug(util.inspect(posts[0], false, null));
           var promises = [];
           var postArray = [];
           for (var x = 0; x < posts.length; x++) {
             var temp = posts[x];
-            promises.push(readPost(temp)
+            promises.push(readPost(temp, posts[x].creator[0])
               .then((result) => {
                 postArray.push(result);
+                logger.debug('postarray size ' + postArray.length);
               }, (err2) => {
-                logger.debug('Routes:content:getPost:find --' + err2);
-                reply.getPostFailure(res, 1);
+                logger.debug('Routes:content:getNextPost:find --' + err2);
+                reply.getPostFailure(res, 500);
               })
             );
           }
@@ -186,12 +201,14 @@ router.post('/getNextPosts', (req, res) => {
       });
 
   } else {
-    reply.getPostFailure(res, 2);
+    logger.debug('Routes:content:getNextPost -- validation');
+    reply.getPostFailure(res, 400);
   }
 });
 
-router.get('/getPostImage', (req, res) => {
-  validate.validateImageID(req).then((result) => {
+//get images in posts
+router.get('/getPostedImage', (req, res) => {
+  validate.validateImageId(req).then((result) => {
     res.set('Content-Type', 'image/jpg');
     res.sendFile(req.query.post_id, {
       root: path.join(__dirname, '../posts/images')
@@ -207,6 +224,61 @@ router.get('/getPostImage', (req, res) => {
   });
 });
 
+//get profile images
+router.get('/getProfileImage', (req, res) => {
+  validate.validateGetProfileImage(req)
+    .then((result) => {
+      const dimen = Number(req.query.dimen);
+      const quality = Number(req.query.quality);
+      sharp('./images/' + req.query.birth_id)
+        .resize(dimen, dimen)
+        .jpeg({
+          quality: quality
+        })
+        .withoutEnlargement(true)
+        .toBuffer()
+        .then((data) => {
+          res.set('Content-Type', 'image/jpg');
+          res.status(200).send(data);
+        })
+        .catch((err) => {
+          logger.error('routes:content:getProfileImage:sharp -- ' + err);
+          res.status(500).send({
+            success: false
+          });
+        });
+    }, (reject) => {
+      logger.debug('routes:content:getProfileImage -- ' + reject);
+      res.status(reject).send({
+        success: false
+      });
+    });
+});
+
+//get all post of a specific user
+router.post('/getSubjectPostsId', (req, res) => {
+//  logger.debug('fsdsdfsdfs');
+  validate.validateBirthId(req)
+    .then((resolve) => {
+      Post.find({
+        creator_id:req.body.birth_id
+      },(err,posts)=>{
+        if(err){
+          logger.debug('routes:content:getSubjectPostsId:find -- ' + err);
+          res.status(500).send({
+            success: false
+          });
+        }else{
+          res.status(200).json(posts);
+        }
+      });
+    }, (reject) => {
+      logger.debug('routes:content:getSubjectPosts -- ' + reject);
+      res.status(reject).send({
+        success: false
+      });
+    });
+});
 
 writeTextToFile = (filename, postContent) => new Promise((resolve, reject) => {
   fs.writeFile('./posts/texts/' + filename, postContent, 'utf8', (err) => {
@@ -232,13 +304,17 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
   });
 });
 
-readPost = (post) => new Promise((resolve, reject) => {
+readPost = (post, creator) => new Promise((resolve, reject) => {
   readFile(post.text_url, './posts/texts/').then((result) => {
     resolve({
-      post_id: post.post_id,
-      time_created: post.time_created,
+      postId: post.post_id,
+      creatorName: creator.name,
+      timeCreated: post.time_created,
+      contentType: post.content_type,
       text: result,
-      image: post.pic_url 
+      upVotes: post.up_votes,
+      downVotes: post.down_votes,
+      isCensored: post.is_censored
     });
   }, (err) => {
     reject(err);
