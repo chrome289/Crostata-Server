@@ -18,7 +18,7 @@ function sendFailure(res, resultCode) {
 
 
 function getPostSuccess(res, postArray) {
-  logger.debug('postarray size '+postArray.length);
+  logger.debug('postarray size ' + postArray.length);
   res.status(200).json({
     success: true,
     posts: postArray
@@ -76,6 +76,43 @@ function sendTokenFailure(res, resultCode) {
   });
 }
 
+function submitVoteSuccess(res) {
+  res.status(200).json({
+    success: true
+  });
+}
+
+function submitVoteFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
+
+function getVoteTotalSuccess(res, total) {
+  res.status(200).json({
+    success: true,
+    total: total
+  });
+}
+
+function getVoteTotalFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
+
+function getVotePerPostSuccess(res, total) {
+  res.status(200).json({
+    success: true,
+    total: total
+  });
+}
+
+function getVotePerPostFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
 
 module.exports = {
   sendSuccess,
@@ -91,5 +128,14 @@ module.exports = {
   submitImagePostFailure,
 
   sendTokenSuccess,
-  sendTokenFailure
+  sendTokenFailure,
+
+  submitVoteSuccess,
+  submitVoteFailure,
+
+  getVoteTotalSuccess,
+  getVoteTotalFailure,
+
+  getVotePerPostSuccess,
+  getVotePerPostFailure
 };

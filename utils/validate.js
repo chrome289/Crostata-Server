@@ -3,6 +3,7 @@ var router = express.Router();
 var moment = require('moment');
 var Subject = require('../models/subject');
 var Post = require('../models/post');
+var Vote = require('../models/vote');
 var logger = require('../utils/logger');
 
 const professions = ['PEASANT', 'MERCHANT', 'SOLDIER', 'REBEL', 'OLIGARCH', 'NONE'];
@@ -11,8 +12,9 @@ function validateTextPost(req) {
   var flag = true;
   if (req.body.postContent.length == 0 || req.body.postContent.length > 40000)
     flag = false;
-  if (req.body.birth_id.length == 9 && !isNaN(req.body.birth_id))
-    return flag;
+  if (req.body.birth_id.length != 9 || isNaN(req.body.birth_id))
+    flag = false;
+  return flag;
 }
 
 function validateImagePost(req) {
@@ -119,6 +121,29 @@ function validateNewUser(newSubject) {
   return flag;
 }
 
+function validateSubmitVote(req) {
+  //validations
+  var flag = true;
+  //logger.debug("length  " + newSubject.name.length);
+  if (req.body.birth_id.length != 9 && isNaN(req.body.birth_id))
+    flag = false;
+  if (Number(req.body.vote) > 1 || Number(req.body.vote) < -1)
+    flag = false;
+  return flag;
+}
+
+function validateGetVoteTotal(req) {
+  //validations
+  var flag = true;
+  return flag;
+}
+
+function validateGetVotePerPost(req) {
+  //validations
+  var flag = true;
+  return flag;
+}
+
 module.exports = {
   validateNewUser,
   validateGetPost,
@@ -127,5 +152,8 @@ module.exports = {
   validateComboPost,
   validateImageId,
   validateBirthId,
-  validateGetProfileImage
+  validateGetProfileImage,
+  validateSubmitVote,
+  validateGetVoteTotal,
+  validateGetVotePerPost
 };

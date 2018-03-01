@@ -16,6 +16,7 @@ var users = require('./routes/users');
 var auth = require('./routes/auth');
 var bot = require('./routes/bot');
 var content = require('./routes/content');
+var opinion = require('./routes/opinion');
 
 //middlewares
 var tokenMiddleware = require('./middlewares/token');
@@ -27,7 +28,8 @@ var logger = require('./utils/logger');
 var config = require('config');
 
 //TODO remove delay later
-var app = express();/*.use(slow({
+var app = express();
+/*.use(slow({
   delay: 3000
 }));*/
 
@@ -59,11 +61,11 @@ app.use(helmet());
 
 //more middlewares
 app.use(bodyParser.json({
-  limit:'50mb'
+  limit: '50mb'
 }));
 app.use(bodyParser.urlencoded({
   extended: false,
-  limit:'50mb'
+  limit: '50mb'
 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -78,6 +80,7 @@ app.use('/api/auth', auth.router);
 //app.use(tokenMiddleware);
 //app.use('/api/auth/loginToken', auth.router);
 app.use('/api/content', content.router);
+app.use('/api/opinion', opinion.router);
 
 
 

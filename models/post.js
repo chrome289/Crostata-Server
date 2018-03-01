@@ -4,7 +4,7 @@ var Schema = mongoose.Schema;
 const PostSchema = new Schema({
   post_id: String,
   creator_id: String,
-  time_created : Date,
+  time_created: Date,
   content_type: String,
   text_url: String,
   pic_url: String,

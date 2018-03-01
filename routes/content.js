@@ -70,42 +70,6 @@ router.post('/submitTextPost', (req, res) => {
   }
 });
 
-router.post('/submitImagePost', (req, res) => {
-  upload(req, res, (err) => {
-    if (validate.validateImagePost(req)) {
-      if (err) {
-        logger.debug('Routes:content:submitImagePost:multer --' + err);
-        reply.submitImagePostFailure(res, 500);
-      } else {
-        //logger.silly(req.file.filename);
-        var filename = req.file.filename;
-        var newPost = new Post({
-          post_id: filename,
-          creator_id: req.body.birth_id,
-          time_created: moment().utc().valueOf(),
-          content_type: 'IO',
-          text_url: '',
-          pic_url: filename,
-          up_votes: 0,
-          down_votes: 0,
-          is_censored: false,
-          is_generated: req.body.generate
-        });
-        //logger.silly('date' + newPost.time_created + '-$$$-' + moment.format());
-        saveNewPostDB(newPost).then((result) => {
-          logger.debug('Routes:content:submitImagePost -- Post saved -> ' + newPost.post_id);
-          reply.submitImagePostSuccess(res);
-        }, (error) => {
-          logger.debug('Routes:content:submitImagePost:mongoose --' + err);
-          reply.submitImagePostFailure(res, 500);
-        });
-      }
-    } else {
-      reply.submitImagePostFailure(res, 400);
-    }
-  });
-});
-
 router.post('/submitComboPost', (req, res) => {
   upload(req, res, (err) => {
     if (validate.validateComboPost(req)) {
@@ -257,18 +221,18 @@ router.get('/getProfileImage', (req, res) => {
 
 //get all post of a specific user
 router.post('/getSubjectPostsId', (req, res) => {
-//  logger.debug('fsdsdfsdfs');
+  //  logger.debug('fsdsdfsdfs');
   validate.validateBirthId(req)
     .then((resolve) => {
       Post.find({
-        creator_id:req.body.birth_id
-      },(err,posts)=>{
-        if(err){
+        creator_id: req.body.birth_id
+      }, (err, posts) => {
+        if (err) {
           logger.debug('routes:content:getSubjectPostsId:find -- ' + err);
           res.status(500).send({
             success: false
           });
-        }else{
+        } else {
           res.status(200).json(posts);
         }
       });
