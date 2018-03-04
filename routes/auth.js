@@ -8,7 +8,6 @@ var router = express.Router();
 
 var Subject = require('../models/subject');
 var reply = require('../utils/reply');
-var validate = require('../utils/validate');
 var config = require('config');
 
 const tokenSecret = config.secret;
@@ -61,30 +60,24 @@ router.post('/login', (req, res) => {
 router.post('/signup', function(req, res) {
   //sign up
   var newSubject = new Subject(req.body);
-  if (validate.validateNewUser(newSubject)) {
-    //check through database
-    subjectExists(newSubject).then((exists) => {
-        //if exists return failure
-        if (exists)
-          reply.sendTokenFailure(res, 400);
-        else {
-          //hash password and save in db
-          hashPassword(newSubject)
-            .then((newSubject)=>saveSubjectDB(newSubject))
-            .then(() => {
-              reply.sendSuccess(res);
-            });
-        }
-      })
-      .catch((err) => {
-        logger.error(err);
-        reply.sendTokenFailure(res, 500);
-      });
-  } else {
-    //validation failed.
-    logger.error('routes:auth:signup -- validation ');
-    reply.sendTokenFailure(res, 400);
-  }
+  //check through database
+  subjectExists(newSubject).then((exists) => {
+      //if exists return failure
+      if (exists)
+        reply.sendTokenFailure(res, 400);
+      else {
+        //hash password and save in db
+        hashPassword(newSubject)
+          .then((newSubject) => saveSubjectDB(newSubject))
+          .then(() => {
+            reply.sendSuccess(res);
+          });
+      }
+    })
+    .catch((err) => {
+      logger.error(err);
+      reply.sendTokenFailure(res, 500);
+    });
 });
 
 router.post('/loginToken', (req, res) => {

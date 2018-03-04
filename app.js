@@ -18,8 +18,10 @@ var bot = require('./routes/bot');
 var content = require('./routes/content');
 var opinion = require('./routes/opinion');
 
+
 //middlewares
 var tokenMiddleware = require('./middlewares/token');
+var validatorMiddleware = require('./middlewares/validator');
 
 //winston logger
 var logger = require('./utils/logger');
@@ -70,15 +72,16 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//use tokenMiddleware only when auth is done already
+app.use('/api',tokenMiddleware.router);
+app.use('/api',validatorMiddleware.router);
+
 //setting up routes hierachy
 app.use('/', index);
 app.use('/users', users);
 app.use('/bot', bot);
 
 app.use('/api/auth', auth.router);
-//use tokenMiddleware only when auth is done already
-//app.use(tokenMiddleware);
-//app.use('/api/auth/loginToken', auth.router);
 app.use('/api/content', content.router);
 app.use('/api/opinion', opinion.router);
 

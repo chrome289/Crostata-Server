@@ -19,7 +19,7 @@ chai.use(chaiHttp);
 var aSubject = {
   "birth_id": "038812566",
   "name": "Darwin Ceniceros",
-  "password": "XA%%JJygjK9D}e",
+  "password": "Password1!",
   "dob": "2016-05-18T16:00:00Z",
   "profession": "PEASANT",
   "gender": 0,
@@ -30,6 +30,7 @@ var aSubject = {
 };
 
 describe('subject tests', () => {
+
   beforeEach((done) => {
     Subject.remove({}, (err) => {
       if (err)
@@ -40,6 +41,7 @@ describe('subject tests', () => {
       done();
     });
   });
+
   describe('adding subject', () => {
     it('addition & duplicate birth_id', (done) => {
       chai.request(app)
@@ -56,7 +58,7 @@ describe('subject tests', () => {
             .post('/api/auth/signup')
             .send(aSubject)
             .end((err, res) => {
-              res.should.have.status(200);
+              res.should.have.status(400);
               res.should.be.json;
               res.body.should.be.a('object');
               res.body.should.have.property('success');
@@ -75,7 +77,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -90,7 +92,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -108,7 +110,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -126,7 +128,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -141,7 +143,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -159,7 +161,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -174,7 +176,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -192,7 +194,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -210,7 +212,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -225,7 +227,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -240,7 +242,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -258,7 +260,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -276,7 +278,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -294,7 +296,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');
@@ -310,7 +312,7 @@ describe('subject tests', () => {
         .post('/api/auth/signup')
         .send(aSubject)
         .end((err, res) => {
-          res.should.have.status(200);
+          res.should.have.status(422);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('success');

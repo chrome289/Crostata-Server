@@ -32,7 +32,18 @@ function getPostFailure(res, resultCode) {
   });
 }
 
+function getPostImageFailure(res, postArray) {
+  logger.debug('postarray size ' + postArray.length);
+  res.status(200).json({
+    success: true
+  });
+}
 
+function getPostImageFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
 
 function submitTextPostSuccess(res) {
   res.status(200).json({
