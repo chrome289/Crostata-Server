@@ -73,8 +73,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //use tokenMiddleware only when auth is done already
-app.use('/api',tokenMiddleware.router);
 app.use('/api',validatorMiddleware.router);
+app.use('/api',tokenMiddleware.router);
 
 //setting up routes hierachy
 app.use('/', index);

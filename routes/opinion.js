@@ -83,37 +83,37 @@ router.delete('/vote', (req, res) => {
 
 router.get('/voteTotal', (req, res) => {
   Vote.find({
-    post_id: req.body.post_id
+    post_id: req.query.post_id
   }).exec((err, votes) => {
     if (err) {
-      logger.debug('routes:opinion:getVoteTotal:find -- ' + err);
-      reply.getVoteTotalFailure(res, 500);
+      logger.debug('routes:opinion:voteTotal:find -- ' + err);
+      reply.voteTotalFailure(res, 500);
     } else {
       var total = 0;
       for (var x = 0; x < votes.length; x++)
         total += votes[x].value;
-      logger.debug('routes:opinion:getVoteTotal:find -- post_id ' + total);
-      reply.getVoteTotalSuccess(res, total);
+      logger.debug('routes:opinion:voteTotal:find -- post_id ' + total);
+      reply.voteTotalSuccess(res, total);
     }
   });
 });
 
 router.get('/votePerPost', (req, res) => {
-  Vote.findOne({
-    birth_id: req.body.birth_id,
-    post_id: req.body.post_id
+  Vote.find({
+    birth_id: req.query.birth_id,
+    post_id: req.query.post_id
   }).then((vote) => {
-    if (vote) {
-      logger.debug(vote);
-      logger.debug('routes:opinion:getVotePerPost:findOne -- post_id ' + vote.value);
-      reply.getVotePerPostSuccess(res, vote.value);
+    if (vote.length>0) {
+      //logger.debug(vote);
+      logger.debug('routes:opinion:votePerPost:findOne -- post_id ' + vote.value);
+      reply.votePerPostSuccess(res, vote.value);
     } else {
-      logger.debug('routes:opinion:getVotePerPost:findOne -- user didn\'t vote ');
-      reply.getVotePerPostFailure(res, 400);
+      logger.debug('routes:opinion:votePerPost:findOne -- user didn\'t vote ');
+      reply.votePerPostFailure(res, 400);
     }
   }, (err) => {
-    logger.debug('routes:opinion:getVotePerPost:findOne -- ' + err);
-    reply.getVotePerPostFailure(res, 500);
+    logger.debug('routes:opinion:votePerPost:findOne -- ' + err);
+    reply.votePerPostFailure(res, 500);
   });
 });
 

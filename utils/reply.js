@@ -32,7 +32,7 @@ function getPostFailure(res, resultCode) {
   });
 }
 
-function getPostImageFailure(res, postArray) {
+function getPostImageSuccess(res, postArray) {
   logger.debug('postarray size ' + postArray.length);
   res.status(200).json({
     success: true
@@ -99,27 +99,27 @@ function submitVoteFailure(res, resultCode) {
   });
 }
 
-function getVoteTotalSuccess(res, total) {
+function voteTotalSuccess(res, total) {
   res.status(200).json({
     success: true,
     total: total
   });
 }
 
-function getVoteTotalFailure(res, resultCode) {
+function voteTotalFailure(res, resultCode) {
   res.status(resultCode).json({
     success: false
   });
 }
 
-function getVotePerPostSuccess(res, total) {
+function votePerPostSuccess(res, total) {
   res.status(200).json({
     success: true,
     total: total
   });
 }
 
-function getVotePerPostFailure(res, resultCode) {
+function votePerPostFailure(res, resultCode) {
   res.status(resultCode).json({
     success: false
   });
@@ -144,9 +144,9 @@ module.exports = {
   submitVoteSuccess,
   submitVoteFailure,
 
-  getVoteTotalSuccess,
-  getVoteTotalFailure,
+  voteTotalSuccess,
+  voteTotalFailure,
 
-  getVotePerPostSuccess,
-  getVotePerPostFailure
+  votePerPostSuccess,
+  votePerPostFailure
 };
