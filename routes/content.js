@@ -28,7 +28,9 @@ var upload = multer({
 
 var router = express.Router();
 
+var Subject = require('../models/subject');
 var Post = require('../models/post');
+var Vote = require('../models/vote');
 var config = require('config');
 var reply = require('../utils/reply');
 
@@ -73,7 +75,7 @@ router.post('/comboPost', (req, res) => {
       var postContent = req.body.postContent;
       const ext = '.txt';
       //logger.silly(req.file.filename);
-      var filename = req.file.filename;
+      var filename = req.file.file;
       var newPost = new Post({
         post_id: filename,
         creator_id: req.body.birth_id,
@@ -105,51 +107,49 @@ router.post('/comboPost', (req, res) => {
 
 router.get('/nextPostsList', (req, res) => {
   var noOfPosts = Number(req.query.noOfPosts);
-
+  var birthId = req.query.birth_id;
   //converting to native date because moment's date doesn't work for some reason
   var lastDatetime = moment.unix(req.query.lastTimestamp)
     .toDate();
 
-  logger.silly("lastts " + lastDatetime + "------" + new Date(req.query.lastTimestamp * 1000));
-  Post.aggregate([{
-      $match: {
-        time_created: {
-          '$lt': lastDatetime
-        }
+  var result = [];
+  var promises = [];
+  Post.find({
+      time_created: {
+        '$lt': lastDatetime
       }
-    }, {
-      $lookup: {
-        "from": "subjects",
-        "localField": "creator_id",
-        "foreignField": "birth_id",
-        "as": "creator"
-      }
-    }])
-    .sort('-time_created')
+    }).sort('-time_created')
     .limit(noOfPosts)
-    .exec((err, posts) => {
-      if (err) {
-        logger.error(err);
-        reply.getPostFailure(res, 500);
-      } else {
-        logger.debug(util.inspect(posts[0], false, null));
-        var promises = [];
-        var postArray = [];
-        for (var x = 0; x < posts.length; x++) {
-          var temp = posts[x];
-          promises.push(readPost(temp, posts[x].creator[0])
-            .then((result) => {
-              postArray.push(result);
-              logger.debug('postarray size ' + postArray.length);
-            }, (err2) => {
-              logger.debug('Routes:content:getNextPost:find --' + err2);
-              reply.getPostFailure(res, 500);
-            })
-          );
-        }
-        Promise.all(promises).then(() =>
-          reply.getPostSuccess(res, postArray));
+    .then((nextPostsList) => {
+      for (var x = 0; x < nextPostsList.length; x++) {
+        var promise1 = readPost(nextPostsList[x]);
+        var promise2 = Subject.findOne({
+          birth_id: nextPostsList[x].creator_id
+        }).exec();
+        var promise3 = Vote.findOne({
+          birth_id: birthId,
+          post_id: nextPostsList[x].post_id
+        }).exec();
+
+        promises.push(new Promise((result) => {
+            Promise.all([promise1, promise2, promise3]).then((values) => {
+            //  logger.debug(values)
+              var tempResult = values[0];
+              tempResult.creatorName = values[1].name;
+              tempResult.opinion = (values[2] == null) ? 0 : values[2].value;
+              result(tempResult);
+            });
+          })
+          .catch((err) => {
+            logger.error(err);
+          })
+        );
       }
+      Promise.all(promises).then((results) => {
+        reply.getPostSuccess(res, results);
+      }, (err) => {
+        reply.getPostFailure(res, 500);
+      });
     });
 });
 
@@ -231,11 +231,11 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
   });
 });
 
-readPost = (post, creator) => new Promise((resolve, reject) => {
+readPost = (post) => new Promise((resolve, reject) => {
   readFile(post.text_url, './posts/texts/').then((result) => {
     resolve({
       postId: post.post_id,
-      creatorName: creator.name,
+      creatorId: post.creator_id,
       timeCreated: post.time_created,
       contentType: post.content_type,
       text: result,

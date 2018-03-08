@@ -40,7 +40,6 @@ router.post('/vote', (req, res) => {
     post_id: req.body.post_id,
     value: req.body.value
   });
-
   Vote.findOneAndUpdate({
     birth_id: newVote.birth_id,
     post_id: newVote.post_id
@@ -48,14 +47,24 @@ router.post('/vote', (req, res) => {
     value: newVote.value
   }).then((vote) => {
     if (vote != null) {
-      logger.debug('routes:opinion:submitVote:findOneAndUpdate -- birth_id ' +
-        newVote.birth_id + " post_id " + newVote.post_id);
-      reply.submitVoteSuccess(res);
-    } else {
-      newVote.save().then((vote) => {
-        logger.debug('routes:opinion:submitVote:findOneAndUpdate:save -- birth_id ' +
+      updateVoteTotals(newVote.post_id).then((resolve) => {
+        logger.debug('routes:opinion:submitVote:findOneAndUpdate:updateVoteTotals -- birth_id ' +
           newVote.birth_id + " post_id " + newVote.post_id);
         reply.submitVoteSuccess(res);
+      }, (reject) => {
+        logger.debug('routes:opinion:submitVote:findOneAndRemove:updateVoteTotals -- ' + err);
+        reply.submitVoteFailure(res, 500);
+      });
+    } else {
+      newVote.save().then((vote) => {
+        updateVoteTotals(newVote.post_id).then((resolve) => {
+          logger.debug('routes:opinion:submitVote:findOneAndUpdate:save:updateVoteTotals -- birth_id ' +
+            newVote.birth_id + " post_id " + newVote.post_id);
+          reply.submitVoteSuccess(res);
+        }, (reject) => {  
+          logger.debug('routes:opinion:submitVote:findOneAndRemove:save:updateVoteTotals -- ' + err);
+          reply.submitVoteFailure(res, 500);
+        });
       }, (err) => {
         logger.debug('routes:opinion:submitVote:findOneAndRemove:save -- ' + err);
         reply.submitVoteFailure(res, 500);
@@ -69,12 +78,14 @@ router.post('/vote', (req, res) => {
 
 router.delete('/vote', (req, res) => {
   Vote.findOneAndRemove({
-    birth_id: req.body.birth_id,
-    post_id: req.body.post_id
+    birth_id: req.query.birth_id,
+    post_id: req.query.post_id
   }).then((vote) => {
-    logger.debug('routes:opinion:deletevote:findOneAndRemove -- birth_id ' +
-      req.body.birth_id + " post_id " + req.body.post_id);
-    reply.submitVoteSuccess(res);
+    updateVoteTotals(req.query.post_id).then((resolve) => {
+      logger.debug('routes:opinion:deletevote:findOneAndRemove -- birth_id ' +
+        req.query.birth_id + " post_id " + req.query.post_id);
+      reply.submitVoteSuccess(res);
+    });
   }, (err) => {
     logger.debug('routes:opinion:deletevote:findOneAndRemove -- ' + err);
     reply.submitVoteFailure(res, 500);
@@ -103,7 +114,7 @@ router.get('/votePerPost', (req, res) => {
     birth_id: req.query.birth_id,
     post_id: req.query.post_id
   }).then((vote) => {
-    if (vote.length>0) {
+    if (vote.length > 0) {
       //logger.debug(vote);
       logger.debug('routes:opinion:votePerPost:findOne -- post_id ' + vote.value);
       reply.votePerPostSuccess(res, vote.value);
@@ -114,6 +125,37 @@ router.get('/votePerPost', (req, res) => {
   }, (err) => {
     logger.debug('routes:opinion:votePerPost:findOne -- ' + err);
     reply.votePerPostFailure(res, 500);
+  });
+});
+
+updateVoteTotals = postId => new Promise((resolve, reject) => {
+  Vote.find({
+    post_id: postId
+  }).then((votes) => {
+    var totalUpVotes = 0;
+    var totalDownVotes = 0;
+    for (var x = 0; x < votes.length; x++) {
+      if (votes[x].value == 1) {
+        totalUpVotes++;
+      } else {
+        totalDownVotes++;
+      }
+    }
+    Post.findOneAndUpdate({
+      post_id: postId
+    }, {
+      up_votes: totalUpVotes,
+      down_votes: totalDownVotes
+    }).then((post) => {
+      logger.debug('routes:opinion:updateVoteTotals:find -- post_id ' + totalUpVotes - totalDownVotes);
+      resolve(totalUpVotes - totalDownVotes);
+    }, (err) => {
+      logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);
+      reject(err);
+    });
+  }, (err) => {
+    logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);
+    reject(err);
   });
 });
 

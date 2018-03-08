@@ -27,7 +27,7 @@ router.post('/auth/signup', [
   check('password').isLength({
     min: 8
   })
-  .matches(/[A-Z]+[a-z]+[0-9]+[!@#$%^&*()+_\-=}{[\]|:;"/?.><,`~]+/),
+  .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/),
   check('dob').isISO8601(),
   check('profession').matches(/^(PEASANT|MERCHANT|SOLDIER|REBEL|OLIGARCH|NONE)$/),
   check('gender').isInt({
@@ -41,15 +41,16 @@ router.post('/auth/signup', [
   check('alive').isBoolean(),
   check('informer').isBoolean()
 ], (req, res, next) => {
+
+    logger.debug('name '+req.body.name);
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     next();
   } else {
     //validation failed.
-    const jsone = {
+    logger.debug('middlewares:validator:signup -- validation ' + JSON.stringify({
       errors: errors.mapped()
-    };
-    logger.debug('middlewares:validator:signup -- validation ' + errors);
+    }));
     reply.sendTokenFailure(res, 422);
   }
 });
@@ -66,9 +67,9 @@ router.post('/auth/login', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:login -- validation ' + {
+    logger.error('middlewares:validator:login -- validation ' + JSON.stringify({
       errors: errors.mapped()
-    });
+    }));
     reply.submitTextPostFailure(res, 422);
   }
 });
@@ -139,7 +140,11 @@ router.get('/content/nextPostsList', [
     min: 1,
     max: 20
   }),
-  check('lastTimestamp').isFloat()
+  check('lastTimestamp').isFloat(),
+  check('birth_id').isInt({
+    min: 0,
+    max: 99999999
+  })
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -240,7 +245,7 @@ router.delete('/opinion/vote', [
     min: 0,
     max: 99999999
   }),
-  check('post_id').exists().isAlphanumeric()
+  check('post_id').exists()
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
