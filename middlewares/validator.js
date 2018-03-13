@@ -20,7 +20,7 @@ router.post('/auth/signup', [
     min: 2,
     max: 40
   }).matches(/^[A-Za-z\s]+$/),
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
@@ -34,7 +34,7 @@ router.post('/auth/signup', [
     min: 0,
     max: 1
   }),
-  check('patriot_index').isInt({
+  check('patriotIndex').isInt({
     min: -1000,
     max: 1000
   }),
@@ -42,7 +42,7 @@ router.post('/auth/signup', [
   check('informer').isBoolean()
 ], (req, res, next) => {
 
-    logger.debug('name '+req.body.name);
+  logger.debug('name ' + req.body.name);
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     next();
@@ -56,7 +56,7 @@ router.post('/auth/signup', [
 });
 
 router.post('/auth/login', [
-  check('birth_id').isLength({
+  check('birthId').isLength({
     min: 0,
     max: 99999999
   }),
@@ -94,7 +94,7 @@ router.post('/content/textPost', [
     min: 1,
     max: 20000
   }),
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   })
@@ -117,7 +117,7 @@ router.post('/content/comboPost', [
     min: 1,
     max: 20000
   }),
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
@@ -141,7 +141,7 @@ router.get('/content/nextPostsList', [
     max: 20
   }),
   check('lastTimestamp').isFloat(),
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   })
@@ -159,7 +159,15 @@ router.get('/content/nextPostsList', [
 });
 
 router.get('/content/postedImage', [
-  check('post_id').exists()
+  check('postId').exists(),
+  check('dimen').isInt({
+    min: 48,
+    max: 2160
+  }),
+  check('quality').isInt({
+    min: 1,
+    max: 100
+  })
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -174,7 +182,7 @@ router.get('/content/postedImage', [
 });
 
 router.get('/content/profileImage', [
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
@@ -202,7 +210,7 @@ router.get('/content/profileImage', [
 });
 
 router.get('/content/subjectPostsId', [
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   })
@@ -222,7 +230,7 @@ router.get('/content/subjectPostsId', [
 });
 
 router.post('/opinion/vote', [
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
@@ -241,11 +249,11 @@ router.post('/opinion/vote', [
 });
 
 router.delete('/opinion/vote', [
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
-  check('post_id').exists()
+  check('postId').exists()
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -262,7 +270,7 @@ router.delete('/opinion/vote', [
 });
 
 router.get('/opinion/voteTotal', [
-  check('post_id').exists().isAlphanumeric()
+  check('postId').exists().isAlphanumeric()
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -277,11 +285,11 @@ router.get('/opinion/voteTotal', [
 });
 
 router.get('/opinion/votePerPost', [
-  check('birth_id').isInt({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),
-  check('post_id').exists().isAlphanumeric()
+  check('postId').exists().isAlphanumeric()
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -292,6 +300,91 @@ router.get('/opinion/votePerPost', [
       errors: errors.mapped()
     }));
     reply.getVotePerPostFailure(res, 422);
+  }
+});
+
+router.post('/opinion/comment', [
+  check('birthId').isInt({
+    min: 0,
+    max: 99999999
+  }),
+  check('postId').exists().isAlphanumeric(),
+  check('text').exists(),
+  check('generate').isBoolean()
+], (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    next();
+  } else {
+    //validation failed.
+    logger.error('middlewares:validator:submitComment -- validation ' + JSON.stringify({
+      errors: errors.mapped()
+    }));
+    reply.submitVoteFailure(res, 422);
+  }
+});
+
+router.delete('/opinion/comment', [
+  check('_id').exists()
+], (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    next();
+  } else {
+    //validation failed.
+    logger.error('middlewares:validator:deleteComment -- validation ' + JSON.stringify({
+      errors: errors.mapped()
+    }));
+    res.status(422).json({
+      success: false
+    });
+  }
+});
+
+router.get('/opinion/comments', [
+  check('postId').exists(),
+  check('noOfComments').isLength({
+    min: 1,
+    max: 20
+  }),
+  check('lastTimestamp').isFloat()
+], (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    next();
+  } else {
+    //validation failed.
+    logger.error('middlewares:validator:getComments -- validation ' + JSON.stringify({
+      errors: errors.mapped()
+    }));
+    res.status(422).json({
+      success: false
+    });
+  }
+});
+
+router.get('/opinion/commentForUser', [
+  check('birthId').isInt({
+    min: 0,
+    max: 99999999
+  }),
+  check('noOfPosts').isLength({
+    min: 1,
+    max: 20
+  }),
+  check('lastTimestamp').isFloat()
+], (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    next();
+  } else {
+    //validation failed.
+    logger.error('middlewares:validator:getCommentForUser -- validation ' + JSON.stringify({
+      errors: errors.mapped()
+    }));
+    res.status(422).json({
+      success: false
+    });
   }
 });
 

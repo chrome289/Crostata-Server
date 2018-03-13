@@ -17,11 +17,11 @@ const professions = ['PEASANT', 'MERCHANT', 'SOLDIER', 'REBEL', 'OLIGARCH', 'NON
 router.post('/login', (req, res) => {
   //login
   logger.info('routes:auth:login -- Preparing to login');
-  logger.debug('routes:auth:login -- Subject -> ' + req.body.birth_id + ' Password -> ' + req.body.password);
-  //find the subject with birth_id
+  logger.debug('routes:auth:login -- Subject -> ' + req.body.birthId + ' Password -> ' + req.body.password);
+  //find the subject with birthId
 
   Subject.findOne({
-    birth_id: req.body.birth_id
+    birthId: req.body.birthId
   }, (err, subject) => {
     if (err) {
       //database error
@@ -29,7 +29,7 @@ router.post('/login', (req, res) => {
       reply.sendTokenFailure(res, 500);
     } else if (!subject) {
       //user doesn't exists
-      logger.info('routes:auth:login:findOne -- User doesn\'t exist -> ' + req.body.birth_id);
+      logger.info('routes:auth:login:findOne -- User doesn\'t exist -> ' + req.body.birthId);
       reply.sendTokenFailure(res, 404);
     } else {
       bcrypt.compare(req.body.password, subject.password, (err, result) => {
@@ -38,7 +38,7 @@ router.post('/login', (req, res) => {
           //send a token //TODO increase expireIn to 24hrs
           const payload = {
             iss: 'Crostata Server',
-            sub: req.body.birth_id.toString()
+            sub: req.body.birthId.toString()
           };
           var token = jwt.sign(payload, tokenSecret, {
             expiresIn: 86400
@@ -49,7 +49,7 @@ router.post('/login', (req, res) => {
           reply.sendTokenSuccess(res, token);
         } else {
           //password incorrect
-          logger.info('routes:auth:login:findOne:bcrypt -- Password incorrect for birth_id -> ' + req.body.birth_id.toString());
+          logger.info('routes:auth:login:findOne:bcrypt -- Password incorrect for birthId -> ' + req.body.birthId.toString());
           reply.sendTokenFailure(res, 403);
         }
       });
@@ -89,7 +89,7 @@ router.post('/loginToken', (req, res) => {
 //check if entry exists
 subjectExists = (newSubject) => new Promise((exists) => {
   Subject.findOne({
-    birth_id: newSubject.birth_id
+    birthId: newSubject.birthId
   }, (err, subject) => {
     if (err) {
       //database error
@@ -97,11 +97,11 @@ subjectExists = (newSubject) => new Promise((exists) => {
       throw err;
     } else if (subject != null) {
       //subject exists
-      logger.debug('routes:auth:subjectExists:findOne -- Subject exists -> ' + newSubject.birth_id);
+      logger.debug('routes:auth:subjectExists:findOne -- Subject exists -> ' + newSubject.birthId);
       exists(true);
     } else {
       //subjects doesn't exist. no error in callback
-      logger.info('routes:auth:subjectExists:findOne -- Subject doesn\'t exist -> ' + newSubject.birth_id);
+      logger.info('routes:auth:subjectExists:findOne -- Subject doesn\'t exist -> ' + newSubject.birthId);
       exists(false);
     }
   });
@@ -124,7 +124,7 @@ hashPassword = (newSubject) => new Promise((resolve) => {
 
 saveSubjectDB = (newSubject) => new Promise((resolve) => {
   //save subject in database
-  //logger.debug('birth_id ' + newSubject.birth_id + '--password--' + newSubject.password);
+  //logger.debug('birthId ' + newSubject.birthId + '--password--' + newSubject.password);
   newSubject.save((err, subject) => {
     if (err) {
       //database error
@@ -132,7 +132,7 @@ saveSubjectDB = (newSubject) => new Promise((resolve) => {
       throw err;
     } else {
       //subject saved
-      logger.debug('routes:auth:saveSubject:save -- Subject saved -> ' + subject.birth_id);
+      logger.debug('routes:auth:saveSubject:save -- Subject saved -> ' + subject.birthId);
       resolve(true);
     }
   });

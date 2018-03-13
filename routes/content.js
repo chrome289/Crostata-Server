@@ -39,22 +39,22 @@ router.post('/textPost', (req, res) => {
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
   var newPost = new Post({
-    post_id: filename,
-    creator_id: req.body.birth_id,
-    time_created: moment().utc().valueOf(),
-    content_type: 'TO',
-    text_url: filename,
-    pic_url: '',
-    up_votes: 0,
-    down_votes: 0,
-    is_censored: false,
-    is_generated: req.body.generate
+    postId: filename,
+    creatorId: req.body.birthId,
+    timeCreated: moment().utc().valueOf(),
+    contentType: 'TO',
+    textUrl: filename,
+    imageUrl: '',
+    upVotes: 0,
+    downVotes: 0,
+    isCensored: false,
+    isGenerated: req.body.generate
   });
-  //logger.silly('date' + newPost.time_created + '-$$$-' + moment.format());
+  //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
   var promise = writeTextToFile(filename, postContent);
   promise.then((result) => {
     saveNewPostDB(newPost).then((result) => {
-      logger.debug('Routes:content:submitTextPost -- Post saved -> ' + newPost.post_id);
+      logger.debug('Routes:content:submitTextPost -- Post saved -> ' + newPost.postId);
       reply.submitImagePostSuccess(res);
     }, (error) => {
       logger.debug('Routes:content:submitTextPost:mongoose --' + err);
@@ -77,21 +77,21 @@ router.post('/comboPost', (req, res) => {
       //logger.silly(req.file.filename);
       var filename = req.file.file;
       var newPost = new Post({
-        post_id: filename,
-        creator_id: req.body.birth_id,
-        time_created: moment().utc().valueOf(),
-        content_type: 'IT',
-        text_url: filename,
-        pic_url: filename,
-        up_votes: 0,
-        down_votes: 0,
-        is_censored: false,
-        is_generated: req.body.generate
+        postId: filename,
+        creatorId: req.body.birthId,
+        timeCreated: moment().utc().valueOf(),
+        contentType: 'IT',
+        textUrl: filename,
+        imageUrl: filename,
+        upVotes: 0,
+        downVotes: 0,
+        isCensored: false,
+        isGenerated: req.body.generate
       });
-      //logger.silly('date' + newPost.time_created + '-$$$-' + moment.format());
+      //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
       writeTextToFile(filename, postContent).then((result) => {
         saveNewPostDB(newPost).then((result) => {
-          logger.debug('Routes:content:submitComboPost -- Post saved -> ' + newPost.post_id);
+          logger.debug('Routes:content:submitComboPost -- Post saved -> ' + newPost.postId);
           reply.submitImagePostSuccess(res);
         }, (error) => {
           logger.debug('Routes:content:submitComboPost:mongoose --' + err);
@@ -107,7 +107,7 @@ router.post('/comboPost', (req, res) => {
 
 router.get('/nextPostsList', (req, res) => {
   var noOfPosts = Number(req.query.noOfPosts);
-  var birthId = req.query.birth_id;
+  var birthId = req.query.birthId;
   //converting to native date because moment's date doesn't work for some reason
   var lastDatetime = moment.unix(req.query.lastTimestamp)
     .toDate();
@@ -115,20 +115,21 @@ router.get('/nextPostsList', (req, res) => {
   var result = [];
   var promises = [];
   Post.find({
-      time_created: {
+      timeCreated: {
         '$lt': lastDatetime
       }
-    }).sort('-time_created')
+    })
+    .sort('-timeCreated')
     .limit(noOfPosts)
     .then((nextPostsList) => {
       for (var x = 0; x < nextPostsList.length; x++) {
         var promise1 = readPost(nextPostsList[x]);
         var promise2 = Subject.findOne({
-          birth_id: nextPostsList[x].creator_id
+          birthId: nextPostsList[x].creatorId
         }).exec();
         var promise3 = Vote.findOne({
-          birth_id: birthId,
-          post_id: nextPostsList[x].post_id
+          birthId: birthId,
+          postId: nextPostsList[x].postId
         }).exec();
 
         promises.push(new Promise((result) => {
@@ -155,24 +156,33 @@ router.get('/nextPostsList', (req, res) => {
 
 //get images in posts
 router.get('/postedImage', (req, res) => {
-  res.set('Content-Type', 'image/jpg');
-  res.sendFile(req.query.post_id, {
-    root: path.join(__dirname, '../posts/images')
-  }, (err) => {
-    if (err) {
-      logger.debug(err);
-      res.status(400).json({
+  const dimen = Number(req.query.dimen);
+  const quality = Number(req.query.quality);
+  sharp('./posts/images/' + req.query.postId)
+    .resize(dimen, null)
+    .jpeg({
+      quality: quality
+    })
+    .withoutEnlargement(true)
+    .toBuffer()
+    .then((data) => {
+      res.set('Content-Type', 'image/jpg');
+      logger.debug(data.length);
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      logger.error('routes:content:postedImage:sharp -- ' + err);
+      res.status(500).send({
         success: false
       });
-    }
-  });
+    });
 });
 
 //get profile images
 router.get('/profileImage', (req, res) => {
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
-  sharp('./images/' + req.query.birth_id)
+  sharp('./images/' + req.query.birthId)
     .resize(dimen, dimen)
     .jpeg({
       quality: quality
@@ -194,7 +204,7 @@ router.get('/profileImage', (req, res) => {
 //get all post of a specific user
 router.get('/subjectPostsId', (req, res) => {
   Post.find({
-    creator_id: req.query.birth_id
+    creatorId: req.query.birthId
   }, (err, posts) => {
     if (err) {
       logger.debug('routes:content:getSubjectPostsId:find -- ' + err);
@@ -225,23 +235,22 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
       logger.debug('Routes:content:saveNewPostDB:mongoose --' + err);
       reject(err);
     } else {
-      logger.debug('Routes:content:saveNewPostDB -- Post saved -> ' + post.post_id);
+      logger.debug('Routes:content:saveNewPostDB -- Post saved -> ' + post.postId);
       resolve();
     }
   });
 });
 
 readPost = (post) => new Promise((resolve, reject) => {
-  readFile(post.text_url, './posts/texts/').then((result) => {
+  readFile(post.textUrl, './posts/texts/').then((result) => {
     resolve({
-      postId: post.post_id,
-      creatorId: post.creator_id,
-      timeCreated: post.time_created,
-      contentType: post.content_type,
+      postId: post.postId,
+      creatorId: post.creatorId,
+      timeCreated: post.timeCreated,
+      contentType: post.contentType,
       text: result,
-      upVotes: post.up_votes,
-      downVotes: post.down_votes,
-      isCensored: post.is_censored
+      votes: post.upVotes-post.downVotes,
+      isCensored: post.isCensored
     });
   }, (err) => {
     reject(err);

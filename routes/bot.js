@@ -20,7 +20,7 @@ router.get('/generate', (req, res) => {
     //logger.debug(randomNumber);
     //generate a random number
     var randomNumber = ~~((randomNumberGen.create().random() * 80000000) + 10000000);
-    newSubject.birth_id = "0" + (randomNumber + 10000000);
+    newSubject.birthId = "0" + (randomNumber + 10000000);
     newSubject.name = randomName({
       gender: (randomNumber % 2 == 0) ? "male" : "female"
     });
@@ -35,8 +35,8 @@ router.get('/generate', (req, res) => {
     newSubject.dob = new Date(randomNumberGen.create().intBetween(-1636986312, (currentDate.getTime())));
     newSubject.profession = professions[getProfessionID(randomNumber)];
     newSubject.gender = (randomNumber % 2 == 0) ? 0 : 1;
-    newSubject.picture = newSubject.birth_id + ".jpg";
-    newSubject.patriot_index = 1000 - (randomNumber % 1999);
+    newSubject.picture = newSubject.birthId + ".jpg";
+    newSubject.patriotIndex = 1000 - (randomNumber % 1999);
     newSubject.alive = (randomNumber % 10 == 0) ? 0 : 1;
     newSubject.informer = (randomNumber % 10 == 0) ? 1 : 0;
     newSubjects.push(newSubject);

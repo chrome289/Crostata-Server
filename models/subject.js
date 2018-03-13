@@ -2,14 +2,14 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 const SubjectSchema = new Schema({
-  birth_id: String,
+  birthId: String,
   name: String,
   password: String,
   dob: Date,
   profession: String,
   gender: Number,
   picture: String,
-  patriot_index: Number,
+  patriotIndex: Number,
   alive: Boolean,
   informer: Boolean
 });

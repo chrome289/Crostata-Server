@@ -8,9 +8,11 @@ const multer = require('multer');
 const fs = require('fs');
 const util = require('util');
 const sharp = require('sharp');
+const mongoose = require('mongoose');
 
 var shortid = require('shortid');
 var moment = require('moment');
+
 
 var diskStorage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -30,38 +32,41 @@ var router = express.Router();
 
 const Post = require('../models/post');
 const Vote = require('../models/vote');
+const Comment = require('../models/comment');
+const Subject = require('../models/subject');
+
 var config = require('config');
 var reply = require('../utils/reply');
 
 
 router.post('/vote', (req, res) => {
   var newVote = new Vote({
-    birth_id: req.body.birth_id,
-    post_id: req.body.post_id,
+    birthId: req.body.birthId,
+    postId: req.body.postId,
     value: req.body.value
   });
   Vote.findOneAndUpdate({
-    birth_id: newVote.birth_id,
-    post_id: newVote.post_id
+    birthId: newVote.birthId,
+    postId: newVote.postId
   }, {
     value: newVote.value
   }).then((vote) => {
     if (vote != null) {
-      updateVoteTotals(newVote.post_id).then((resolve) => {
-        logger.debug('routes:opinion:submitVote:findOneAndUpdate:updateVoteTotals -- birth_id ' +
-          newVote.birth_id + " post_id " + newVote.post_id);
-        reply.submitVoteSuccess(res);
+      updateVoteTotals(newVote.postId).then((voteTotal) => {
+        logger.debug('routes:opinion:submitVote:findOneAndUpdate:updateVoteTotals -- birthId ' +
+          newVote.birthId + " postId " + newVote.postId);
+        reply.submitVoteSuccess(res, voteTotal);
       }, (reject) => {
         logger.debug('routes:opinion:submitVote:findOneAndRemove:updateVoteTotals -- ' + err);
         reply.submitVoteFailure(res, 500);
       });
     } else {
       newVote.save().then((vote) => {
-        updateVoteTotals(newVote.post_id).then((resolve) => {
-          logger.debug('routes:opinion:submitVote:findOneAndUpdate:save:updateVoteTotals -- birth_id ' +
-            newVote.birth_id + " post_id " + newVote.post_id);
-          reply.submitVoteSuccess(res);
-        }, (reject) => {  
+        updateVoteTotals(newVote.postId).then((voteTotal) => {
+          logger.debug('routes:opinion:submitVote:findOneAndUpdate:save:updateVoteTotals -- birthId ' +
+            newVote.birthId + " postId " + newVote.postId);
+          reply.submitVoteSuccess(res, voteTotal);
+        }, (reject) => {
           logger.debug('routes:opinion:submitVote:findOneAndRemove:save:updateVoteTotals -- ' + err);
           reply.submitVoteFailure(res, 500);
         });
@@ -78,23 +83,23 @@ router.post('/vote', (req, res) => {
 
 router.delete('/vote', (req, res) => {
   Vote.findOneAndRemove({
-    birth_id: req.query.birth_id,
-    post_id: req.query.post_id
+    birthId: req.query.birthId,
+    postId: req.query.postId
   }).then((vote) => {
-    updateVoteTotals(req.query.post_id).then((resolve) => {
-      logger.debug('routes:opinion:deletevote:findOneAndRemove -- birth_id ' +
-        req.query.birth_id + " post_id " + req.query.post_id);
-      reply.submitVoteSuccess(res);
+    updateVoteTotals(req.query.postId).then((voteTotal) => {
+      logger.debug('routes:opinion:deletevote:findOneAndRemove -- birthId ' +
+        req.query.birthId + " postId " + req.query.postId);
+      reply.deleteVoteSuccess(res, voteTotal);
     });
   }, (err) => {
     logger.debug('routes:opinion:deletevote:findOneAndRemove -- ' + err);
-    reply.submitVoteFailure(res, 500);
+    reply.deleteVoteFailure(res, 500);
   });
 });
 
 router.get('/voteTotal', (req, res) => {
   Vote.find({
-    post_id: req.query.post_id
+    postId: req.query.postId
   }).exec((err, votes) => {
     if (err) {
       logger.debug('routes:opinion:voteTotal:find -- ' + err);
@@ -103,7 +108,7 @@ router.get('/voteTotal', (req, res) => {
       var total = 0;
       for (var x = 0; x < votes.length; x++)
         total += votes[x].value;
-      logger.debug('routes:opinion:voteTotal:find -- post_id ' + total);
+      logger.debug('routes:opinion:voteTotal:find -- postId ' + total);
       reply.voteTotalSuccess(res, total);
     }
   });
@@ -111,12 +116,12 @@ router.get('/voteTotal', (req, res) => {
 
 router.get('/votePerPost', (req, res) => {
   Vote.find({
-    birth_id: req.query.birth_id,
-    post_id: req.query.post_id
+    birthId: req.query.birthId,
+    postId: req.query.postId
   }).then((vote) => {
     if (vote.length > 0) {
       //logger.debug(vote);
-      logger.debug('routes:opinion:votePerPost:findOne -- post_id ' + vote.value);
+      logger.debug('routes:opinion:votePerPost:findOne -- postId ' + vote.value);
       reply.votePerPostSuccess(res, vote.value);
     } else {
       logger.debug('routes:opinion:votePerPost:findOne -- user didn\'t vote ');
@@ -128,9 +133,98 @@ router.get('/votePerPost', (req, res) => {
   });
 });
 
+router.post('/comment', (req, res) => {
+  var newComment = new Comment({
+    birthId: req.body.birthId,
+    postId: req.body.postId,
+    text: req.body.text,
+    timeCreated: moment().utc().valueOf(),
+    isCensored: false,
+    isGenerated: req.body.generate
+  });
+  newComment.save()
+    .then((comment) => {
+      reply.submitCommentSuccess(res);
+    })
+    .catch((err) => {
+      logger.debug('routes:opinion:postComment:save -- ' + err);
+      reply.submitCommentFailure(res, 500);
+    });
+});
+
+router.delete('/comment', (req, res) => {
+  Comment.findOneAndRemove({
+      _id: mongoose.Types.ObjectId(req.query._id)
+    })
+    .then((comment) => {
+      if (comment == null) {
+        logger.debug('routes:opinion:deleteComment:findOneAndRemove -- comment not found');
+        reply.deleteCommentFailure(res, 500);
+      } else {
+        reply.deleteCommentSuccess(res);
+      }
+    })
+    .catch((err) => {
+      logger.debug('routes:opinion:deleteComment:findOneAndRemove -- ' + err);
+      reply.deleteCommentFailure(res, 500);
+    });
+});
+
+router.get('/comments', (req, res) => {
+  //converting to native date because moment's date doesn't work for some reason
+  var lastDatetime = moment.unix(req.query.lastTimestamp)
+    .toDate();
+  Comment.find({
+      postId: req.query.postId,
+      timeCreated: {
+        '$lt': lastDatetime
+      }
+    })
+    .sort('-timeCreated')
+    .limit(Number(req.query.noOfComments))
+    .then((comments) => {
+      var resultPromises = [];
+      logger.debug('comments '+comments+'\n\n'+comments.length);
+      for (var x = 0; x < comments.length; x++) {
+        resultPromises.push(getCommentDetails(comments[x]));
+      }
+      Promise.all(resultPromises).then((comments) => {
+          reply.getCommentSuccess(res, comments);
+        })
+        .catch((err) => {
+          logger.debug('routes:opinion:getComments:find:promises -- ' + err);
+          reply.getCommentFailure(res, 500);
+        });
+    })
+    .catch((err) => {
+      logger.debug('routes:opinion:getComments:find -- ' + err);
+      reply.getCommentFailure(res, 500);
+    });
+});
+
+router.get('/commentForUser',(req,res)=>{
+
+});
+
+getCommentDetails = comment => new Promise((resolve, reject) => {
+  Subject.findOne({
+      birthId: comment.birthId
+    }).then((subject) => {
+      resolve({
+        _id: comment._id,
+        name: subject.name,
+        text: comment.text,
+        timeCreated: comment.timeCreated
+      });
+    })
+    .catch((err) => {
+      reject(err);
+    });
+});
+
 updateVoteTotals = postId => new Promise((resolve, reject) => {
   Vote.find({
-    post_id: postId
+    postId: postId
   }).then((votes) => {
     var totalUpVotes = 0;
     var totalDownVotes = 0;
@@ -142,12 +236,12 @@ updateVoteTotals = postId => new Promise((resolve, reject) => {
       }
     }
     Post.findOneAndUpdate({
-      post_id: postId
+      postId: postId
     }, {
-      up_votes: totalUpVotes,
-      down_votes: totalDownVotes
+      upVotes: totalUpVotes,
+      downVotes: totalDownVotes
     }).then((post) => {
-      logger.debug('routes:opinion:updateVoteTotals:find -- post_id ' + totalUpVotes - totalDownVotes);
+      logger.debug('routes:opinion:updateVoteTotals:find -- postId ' + totalUpVotes - totalDownVotes);
       resolve(totalUpVotes - totalDownVotes);
     }, (err) => {
       logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);

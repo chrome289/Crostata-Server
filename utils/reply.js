@@ -87,15 +87,17 @@ function sendTokenFailure(res, resultCode) {
   });
 }
 
-function submitVoteSuccess(res) {
+function submitVoteSuccess(res,total) {
   res.status(200).json({
-    success: true
+    success: true,
+    total: total
   });
 }
 
 function submitVoteFailure(res, resultCode) {
   res.status(resultCode).json({
-    success: false
+    success: false,
+    total: 0
   });
 }
 
@@ -125,6 +127,58 @@ function votePerPostFailure(res, resultCode) {
   });
 }
 
+function deleteVoteSuccess(res, total) {
+  res.status(200).json({
+    success: true,
+    total: total
+  });
+}
+
+function deleteVoteFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false,
+    total: 0,
+  });
+}
+
+function submitCommentSuccess(res) {
+  res.status(200).json({
+    success: true
+  });
+}
+
+function submitCommentFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
+
+function deleteCommentSuccess(res) {
+  res.status(200).json({
+    success: true
+  });
+}
+
+function deleteCommentFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false
+  });
+}
+
+function getCommentSuccess(res, comments) {
+  res.status(200).json({
+    success: true,
+    comments: comments
+  });
+}
+
+function getCommentFailure(res, resultCode) {
+  res.status(resultCode).json({
+    success: false,
+    comments: [],
+  });
+}
+
 module.exports = {
   sendSuccess,
   sendFailure,
@@ -148,5 +202,17 @@ module.exports = {
   voteTotalFailure,
 
   votePerPostSuccess,
-  votePerPostFailure
+  votePerPostFailure,
+
+  deleteVoteSuccess,
+  deleteVoteFailure,
+
+  submitCommentSuccess,
+  submitCommentFailure,
+
+  deleteCommentSuccess,
+  deleteCommentFailure,
+
+  getCommentSuccess,
+  getCommentFailure
 };
