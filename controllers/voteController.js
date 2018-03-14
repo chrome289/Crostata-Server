@@ -1,22 +1,13 @@
-/*jshint loopfunc: true */
 'use strict';
 
 const express = require('express');
-const path = require('path');
 const logger = require('../utils/logger');
-const bcrypt = require('bcrypt');
-const multer = require('multer');
-const fs = require('fs');
-const util = require('util');
-const sharp = require('sharp');
 const mongoose = require('mongoose');
 
-var shortid = require('shortid');
 var moment = require('moment');
 
 const Post = require('../models/post');
 const Vote = require('../models/vote');
-const Comment = require('../models/comment');
 const Subject = require('../models/subject');
 
 var config = require('config');
@@ -28,44 +19,43 @@ exports.addVote = function(req, res) {
     value: req.body.value
   });
   Vote.findOneAndUpdate({
-    birthId: newVote.birthId,
-    postId: newVote.postId
-  }, {
-    value: newVote.value
-  }).then((vote) => {
-    if (vote != null) {
-      updateVoteTotals(newVote.postId).then((voteTotal) => {
-        logger.debug('routes:opinion:submitVote:findOneAndUpdate:' +
-          'updateVoteTotals -- birthId ' +
-          newVote.birthId + ' postId ' + newVote.postId);
-        voteSuccess(res, voteTotal);
-      }, (reject) => {
-        logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
-          'updateVoteTotals -- ' + reject);
-        voteFailure(res, 500);
-      });
-    } else {
-      newVote.save().then((vote) => {
-        updateVoteTotals(newVote.postId).then((voteTotal) => {
-          logger.debug('routes:opinion:submitVote:findOneAndUpdate:' +
-            'save:updateVoteTotals -- birthId ' +
-            newVote.birthId + ' postId ' + newVote.postId);
-          voteSuccess(res, voteTotal);
-        }, (reject) => {
-          logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
-            'save:updateVoteTotals -- ' + reject);
-          voteFailure(res, 500);
-        });
-      }, (err) => {
-        logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
-          'save -- ' + err);
-        voteFailure(res, 500);
-      });
-    }
-  }, (err) => {
-    logger.debug('routes:opinion:submitVote:findOneAndUpdate -- ' + err);
-    voteFailure(res, 500);
-  });
+      birthId: newVote.birthId,
+      postId: newVote.postId
+    }, {
+      value: newVote.value
+    })
+    .then((vote) => {
+      if (vote != null) {
+        updateVoteTotals(newVote.postId)
+          .then((voteTotal) => {
+            logger.debug('routes:opinion:submitVote:findOneAndUpdate:' +
+              'updateVoteTotals -- birthId ' +
+              newVote.birthId + ' postId ' + newVote.postId);
+            voteSuccess(res, voteTotal);
+          })
+          .catch((err) => {
+            logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
+              'updateVoteTotals -- ' + err);
+            voteFailure(res, 500);
+          });
+      } else {
+        saveNewVote(newVote)
+          .then((voteTotal) => {
+            logger.debug('routes:opinion:submitVote:findOneAndUpdate:' +
+              'saveNewVote -- birthId ' +
+              newVote.birthId + ' postId ' + newVote.postId);
+            voteSuccess(res, voteTotal);
+          })
+          .catch((err) => {
+            logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
+              'saveNewVote -- ' + err);
+            voteFailure(res, 500);
+          });
+      }
+    }, (err) => {
+      logger.debug('routes:opinion:submitVote:findOneAndUpdate -- ' + err);
+      voteFailure(res, 500);
+    });
 };
 
 exports.deleteVote = function(req, res) {
@@ -122,51 +112,78 @@ exports.getVotePerPost = function(req, res) {
   });
 };
 
+var saveNewVote = newVote => new Promise((resolve, reject) => {
+  newVote.save()
+    .exec()
+    .then((vote) => {
+      updateVoteTotals(newVote.postId)
+        .then((voteTotal) => {
+          logger.debug('routes:opinion:submitVote:findOneAndUpdate:' +
+            'save:updateVoteTotals -- birthId ' +
+            newVote.birthId + ' postId ' + newVote.postId);
+          resolve(voteTotal);
+        })
+        .catch((err) => {
+          logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
+            'save:updateVoteTotals -- ' + err);
+          reject(err);
+        });
+    })
+    .catch((err) => {
+      logger.debug('routes:opinion:submitVote:findOneAndRemove:' +
+        'save -- ' + err);
+      reject(err);
+    });
+});
+
 var updateVoteTotals = postId => new Promise((resolve, reject) => {
   Vote.find({
-    postId: postId
-  }).then((votes) => {
-    var totalUpVotes = 0;
-    var totalDownVotes = 0;
-    for (var x = 0; x < votes.length; x++) {
-      if (votes[x].value === 1) {
-        totalUpVotes++;
-      } else {
-        totalDownVotes++;
-      }
-    }
-    Post.findOneAndUpdate({
       postId: postId
-    }, {
-      upVotes: totalUpVotes,
-      downVotes: totalDownVotes
-    }).then((post) => {
-      logger.debug('routes:opinion:updateVoteTotals:find -- ' +
-        'postId ' + totalUpVotes - totalDownVotes);
-      resolve(totalUpVotes - totalDownVotes);
-    }, (err) => {
+    })
+    .then((votes) => {
+      var totalUpVotes = 0;
+      var totalDownVotes = 0;
+      for (var x = 0; x < votes.length; x++) {
+        if (votes[x].value === 1) {
+          totalUpVotes++;
+        } else {
+          totalDownVotes++;
+        }
+      }
+      Post.findOneAndUpdate({
+          postId: postId
+        }, {
+          upVotes: totalUpVotes,
+          downVotes: totalDownVotes
+        })
+        .then((post) => {
+          logger.debug('routes:opinion:updateVoteTotals:find -- ' +
+            'postId ' + totalUpVotes - totalDownVotes);
+          resolve(totalUpVotes - totalDownVotes);
+        })
+        .catch((err) => {
+          logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);
+          reject(err);
+        });
+    })
+    .catch((err) => {
       logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);
       reject(err);
     });
-  }, (err) => {
-    logger.debug('routes:opinion:updateVoteTotals:find -- ' + err);
-    reject(err);
-  });
 });
 
 
 
-
-function voteSuccess(res, total) {
+var voteSuccess = (res, total) => {
   res.status(200).json({
     success: true,
     total: total
   });
-}
+};
 
-function voteFailure(res, resultCode) {
+var voteFailure = (res, resultCode) => {
   res.status(resultCode).json({
     success: false,
     total: 0
   });
-}
+};

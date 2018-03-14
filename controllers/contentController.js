@@ -1,5 +1,3 @@
-/*jshint loopfunc: true */
-
 const express = require('express');
 const path = require('path');
 const logger = require('../utils/logger');
@@ -49,21 +47,19 @@ exports.addTextPost = function(req, res) {
     isGenerated: req.body.generate
   });
   //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
-  var promise = writeTextToFile(filename, postContent);
-  promise.then((result) => {
-    saveNewPostDB(newPost)
-      .then((result) => {
-        logger.debug('Routes:content:submitTextPost -- ' +
-          'Post saved -> ' + newPost.postId);
-        res.status(200).send();
-      }, (error) => {
-        logger.debug('Routes:content:submitTextPost:mongoose --' + err);
-        res.status(500).send();
-      });
-  }, (error) => {
-    logger.debug('Routes:content:submitTextPost:writeFile --' + err);
-    res.status(500).send();
-  });
+  writeTextToFile(filename, postContent)
+    .then((result) => {
+      saveNewPostDB(newPost);
+    })
+    .then((result) => {
+      logger.debug('Routes:content:submitTextPost -- ' +
+        'Post saved -> ' + newPost.postId);
+      res.status(200).send();
+    })
+    .catch((error) => {
+      logger.debug('Routes:content:submitTextPost:writeTextToFile --' + error);
+      res.status(500).send();
+    });
 };
 
 exports.addComboPost = function(req, res) {
@@ -91,15 +87,14 @@ exports.addComboPost = function(req, res) {
       //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
       writeTextToFile(filename, postContent)
         .then((result) => {
-          saveNewPostDB(newPost).then((result) => {
-            logger.debug('Routes:content:submitComboPost -- ' +
-              'Post saved -> ' + newPost.postId);
-            res.status(200).send();
-          }, (error) => {
-            logger.debug('Routes:content:submitComboPost:mongoose --' + err);
-            res.status(500).send();
-          });
-        }, (error) => {
+          saveNewPostDB(newPost);
+        })
+        .then((result) => {
+          logger.debug('Routes:content:submitComboPost -- ' +
+            'Post saved -> ' + newPost.postId);
+          res.status(200).send();
+        })
+        .catch((error) => {
           logger.debug('Routes:content:submitComboPost:writeFile --' + err);
           res.status(500).send();
         });
@@ -113,9 +108,8 @@ exports.getNextPosts = function(req, res) {
   //converting to native date because moment's date doesn't work for some reason
   var lastDatetime = moment.unix(req.query.lastTimestamp)
     .toDate();
-
   var result = [];
-  var promises = [];
+  var promiseList = [];
   Post.find({
       timeCreated: {
         '$lt': lastDatetime
@@ -123,36 +117,19 @@ exports.getNextPosts = function(req, res) {
     })
     .sort('-timeCreated')
     .limit(noOfPosts)
+    .exec()
     .then((nextPostsList) => {
       for (var x = 0; x < nextPostsList.length; x++) {
-        var promise1 = readPost(nextPostsList[x]);
-        var promise2 = Subject.findOne({
-          birthId: nextPostsList[x].creatorId
-        }).exec();
-        var promise3 = Vote.findOne({
-          birthId: birthId,
-          postId: nextPostsList[x].postId
-        }).exec();
-
-        promises.push(new Promise((result) => {
-            Promise.all([promise1, promise2, promise3]).then((values) => {
-              //  logger.debug(values)
-              var tempResult = values[0];
-              tempResult.creatorName = values[1].name;
-              tempResult.opinion = (values[2] == null) ? 0 : values[2].value;
-              result(tempResult);
-            });
-          })
-          .catch((err) => {
-            logger.error(err);
-          })
-        );
+        promiseList.push(getSuperPost(nextPostsList[x], birthId));
       }
-      Promise.all(promises).then((results) => {
-        res.status(200).json(results);
-      }, (err) => {
-        res.status(500).send();
-      });
+      Promise.all(promiseList)
+        .then((results) => {
+          res.status(200).json(results);
+        })
+        .catch((error) => {
+          logger.error(error);
+          res.status(500).send();
+        });
     });
 };
 
@@ -206,18 +183,42 @@ exports.getProfileImage = function(req, res) {
 //get all post of a specific user
 exports.getSubjectPostsId = function(req, res) {
   Post.find({
-    creatorId: req.query.birthId
-  }, (err, posts) => {
-    if (err) {
+      creatorId: req.query.birthId
+    })
+    .exec()
+    .then((posts) => {
+      res.status(200).json(posts);
+    })
+    .catch((err) => {
       logger.debug('routes:content:getSubjectPostsId:find -- ' + err);
       res.status(500).send({
         success: false
       });
-    } else {
-      res.status(200).json(posts);
-    }
-  });
+    });
 };
+
+getSuperPost = (originalPost, birthId) => new Promise((resolve, reject) => {
+  var promise1 = readPost(originalPost);
+  var promise2 = Subject.findOne({
+    birthId: originalPost.creatorId
+  }).exec();
+  var promise3 = Vote.findOne({
+    birthId: birthId,
+    postId: originalPost.postId
+  }).exec();
+  Promise.all([promise1, promise2, promise3])
+    .then((values) => {
+      //  logger.debug(values)
+      var tempResult = values[0];
+      tempResult.creatorName = values[1].name;
+      tempResult.opinion = (values[2] == null) ? 0 : values[2].value;
+      resolve(tempResult);
+    })
+    .catch((error) => {
+      logger.error(error);
+      reject(error);
+    });
+});
 
 writeTextToFile = (filename, postContent) => new Promise((resolve, reject) => {
   fs.writeFile('./posts/texts/' + filename, postContent, 'utf8', (err) => {
@@ -246,19 +247,21 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
 });
 
 readPost = (post) => new Promise((resolve, reject) => {
-  readFile(post.textUrl, './posts/texts/').then((result) => {
-    resolve({
-      postId: post.postId,
-      creatorId: post.creatorId,
-      timeCreated: post.timeCreated,
-      contentType: post.contentType,
-      text: result,
-      votes: post.upVotes - post.downVotes,
-      isCensored: post.isCensored
+  readFile(post.textUrl, './posts/texts/')
+    .then((result) => {
+      resolve({
+        postId: post.postId,
+        creatorId: post.creatorId,
+        timeCreated: post.timeCreated,
+        contentType: post.contentType,
+        text: result,
+        votes: post.upVotes - post.downVotes,
+        isCensored: post.isCensored
+      });
+    })
+    .catch((err) => {
+      reject(err);
     });
-  }, (err) => {
-    reject(err);
-  });
 });
 
 readFile = (path, root) => new Promise((resolve, reject) => {

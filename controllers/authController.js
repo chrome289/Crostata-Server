@@ -12,7 +12,6 @@ const professions = ['PEASANT', 'MERCHANT', 'SOLDIER',
   'REBEL', 'OLIGARCH', 'NONE'
 ];
 
-
 exports.login = function(req, res) {
   //login
   logger.info('routes:auth:login -- Preparing to login');
@@ -100,24 +99,25 @@ exports.loginToken = function(req, res) {
 //check if entry exists
 subjectExists = (newSubject) => new Promise((exists) => {
   Subject.findOne({
-    birthId: newSubject.birthId
-  }, (err, subject) => {
-    if (err) {
-      //database error
+      birthId: newSubject.birthId
+    })
+    .then((subject) => {
+      if (subject != null) {
+        //subject exists
+        logger.debug('routes:auth:subjectExists:findOne -- ' +
+          'Subject exists -> ' + newSubject.birthId);
+        exists(true);
+      } else {
+        //subjects doesn't exist. no error in callback
+        logger.info('routes:auth:subjectExists:findOne -- ' +
+          'Subject doesn\'t exist -> ' + newSubject.birthId);
+        exists(false);
+      }
+    })
+    .catch((err) => {
       logger.error('routes:auth:subjectExists:mongoose --' + err);
       throw err;
-    } else if (subject != null) {
-      //subject exists
-      logger.debug('routes:auth:subjectExists:findOne -- ' +
-        'Subject exists -> ' + newSubject.birthId);
-      exists(true);
-    } else {
-      //subjects doesn't exist. no error in callback
-      logger.info('routes:auth:subjectExists:findOne -- ' +
-        'Subject doesn\'t exist -> ' + newSubject.birthId);
-      exists(false);
-    }
-  });
+    });
 });
 
 //hash password
@@ -139,32 +139,30 @@ saveSubjectDB = (newSubject) => new Promise((resolve) => {
   //save subject in database
   /*logger.debug('birthId ' + newSubject.birthId +
    '--password--' + newSubject.password);*/
-  newSubject.save((err, subject) => {
-    if (err) {
-      //database error
-      logger.debug('routes:auth:saveSubject:mongoose -- ' + err);
-      throw err;
-    } else {
-      //subject saved
+  newSubject.save()
+    .then((subject) => {
       logger.debug('routes:auth:saveSubject:save -- ' +
         'Subject saved -> ' + subject.birthId);
       resolve(true);
-    }
-  });
+    })
+    .catch((err) => {
+      logger.debug('routes:auth:saveSubject:mongoose -- ' + err);
+      throw err;
+    });
 });
 
 
 //response functions
-function sendTokenSuccess(res, token) {
+var sendTokenSuccess = (res, token) => {
   res.status(200).json({
     success: true,
     tokenValue: token
   });
-}
+};
 
-function sendTokenFailure(res, resultCode) {
+var sendTokenFailure = (res, resultCode) => {
   res.status(resultCode).json({
     success: false,
     tokenValue: ''
   });
-}
+};

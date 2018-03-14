@@ -1,4 +1,3 @@
-/*jshint loopfunc: true */
 'use strict';
 const express = require('express');
 const logger = require('../utils/logger');
@@ -7,7 +6,6 @@ const mongoose = require('mongoose');
 var moment = require('moment');
 
 const Post = require('../models/post');
-const Vote = require('../models/vote');
 const Comment = require('../models/comment');
 const Subject = require('../models/subject');
 
@@ -69,7 +67,8 @@ exports.getComments = function(req, res) {
       for (var x = 0; x < comments.length; x++) {
         resultPromises.push(getCommentDetails(comments[x]));
       }
-      Promise.all(resultPromises).then((comments) => {
+      Promise.all(resultPromises)
+        .then((comments) => {
           commentSuccess(res, comments);
         })
         .catch((err) => {
@@ -84,13 +83,30 @@ exports.getComments = function(req, res) {
 };
 
 exports.getCommentForUser = function(req, res) {
-
+  var lastDatetime = moment.unix(req.query.lastTimestamp)
+    .toDate();
+  Comment.find({
+    birthId:req.query.birthId,
+    timeCreated: {
+      '$lt': lastDatetime
+    }
+  })
+  .sort('-timeCreated')
+  .limit(Number(req.query.noOfComments))
+  .then((comments) => {
+    commentSuccess(res, comments);
+  })
+  .catch((err) => {
+    logger.debug('routes:opinion:getCommentForUser:find -- ' + err);
+    commentFailure(res, 500);
+  });
 };
 
 var getCommentDetails = comment => new Promise((resolve, reject) => {
   Subject.findOne({
       birthId: comment.birthId
-    }).then((subject) => {
+    })
+    .then((subject) => {
       resolve({
         _id: comment._id,
         name: subject.name,
@@ -103,18 +119,16 @@ var getCommentDetails = comment => new Promise((resolve, reject) => {
     });
 });
 
-
-
-function commentSuccess(res, comments) {
+var commentSuccess = (res, comments) => {
   res.status(200).json({
     success: true,
     comments: comments
   });
-}
+};
 
-function commentFailure(res, resultCode) {
+var commentFailure = (res, resultCode) => {
   res.status(resultCode).json({
     success: false,
     comments: [],
   });
-}
+};
