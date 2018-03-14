@@ -5,9 +5,9 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var jwt = require('jsonwebtoken');
-var morgan = require("morgan");
-var compression = require("compression");
-var helmet = require("helmet");
+var morgan = require('morgan');
+var compression = require('compression');
+var helmet = require('helmet');
 var slow = require('connect-slow');
 
 //routes
@@ -45,6 +45,7 @@ if (!module.parent) {
 }
 
 //database
+mongoose.Promise = require('bluebird');
 mongoose.connect(config.database);
 
 // view engine setup
@@ -73,8 +74,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //use tokenMiddleware only when auth is done already
-app.use('/api',validatorMiddleware.router);
-app.use('/api',tokenMiddleware.router);
+app.use('/api', validatorMiddleware.router);
+app.use('/api', tokenMiddleware.router);
 
 //setting up routes hierachy
 app.use('/', index);

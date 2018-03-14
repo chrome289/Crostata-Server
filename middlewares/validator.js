@@ -4,8 +4,6 @@ const config = require('config');
 
 const logger = require('../utils/logger');
 
-var reply = require('../utils/reply');
-
 const {
   check,
   validationResult
@@ -29,7 +27,8 @@ router.post('/auth/signup', [
   })
   .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/),
   check('dob').isISO8601(),
-  check('profession').matches(/^(PEASANT|MERCHANT|SOLDIER|REBEL|OLIGARCH|NONE)$/),
+  check('profession')
+  .matches(/^(PEASANT|MERCHANT|SOLDIER|REBEL|OLIGARCH|NONE)$/),
   check('gender').isInt({
     min: 0,
     max: 1
@@ -48,10 +47,11 @@ router.post('/auth/signup', [
     next();
   } else {
     //validation failed.
-    logger.debug('middlewares:validator:signup -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.sendTokenFailure(res, 422);
+    logger.debug('middlewares:validator:signup -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -70,7 +70,7 @@ router.post('/auth/login', [
     logger.error('middlewares:validator:login -- validation ' + JSON.stringify({
       errors: errors.mapped()
     }));
-    reply.submitTextPostFailure(res, 422);
+    res.status(422).send();
   }
 });
 
@@ -82,10 +82,11 @@ router.post('/auth/loginToken', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:loginToken -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.submitTextPostFailure(res, 422);
+    logger.error('middlewares:validator:loginToken -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -104,10 +105,11 @@ router.post('/content/textPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitTextPost -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.submitTextPostFailure(res, 422);
+    logger.error('middlewares:validator:submitTextPost -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -128,10 +130,11 @@ router.post('/content/comboPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitComboPost -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.submitImagePostFailure(res, 422);
+    logger.error('middlewares:validator:submitComboPost -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -151,10 +154,11 @@ router.get('/content/nextPostsList', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getNextPost -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.getPostFailure(res, 422);
+    logger.error('middlewares:validator:getNextPost -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -174,10 +178,11 @@ router.get('/content/postedImage', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getPostedImage -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.getPostImageFailure(res, 422);
+    logger.error('middlewares:validator:getPostedImage -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -200,12 +205,11 @@ router.get('/content/profileImage', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getProfileImage -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).send({
-      success: false
-    });
+    logger.error('middlewares:validator:getProfileImage -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -220,12 +224,11 @@ router.get('/content/subjectPostsId', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getSubjectPostsId -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).send({
-      success: false
-    });
+    logger.error('middlewares:validator:getSubjectPostsId -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -241,10 +244,11 @@ router.post('/opinion/vote', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitVote -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.submitVoteFailure(res, 422);
+    logger.error('middlewares:validator:submitVote -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -260,12 +264,11 @@ router.delete('/opinion/vote', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:deletevote -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).json({
-      success: false
-    });
+    logger.error('middlewares:validator:deletevote -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -277,10 +280,11 @@ router.get('/opinion/voteTotal', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getVoteTotal -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.getVoteTotalFailure(res, 422);
+    logger.error('middlewares:validator:getVoteTotal -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -296,10 +300,11 @@ router.get('/opinion/votePerPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getVotePerPost -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.getVotePerPostFailure(res, 422);
+    logger.error('middlewares:validator:getVotePerPost -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -317,10 +322,11 @@ router.post('/opinion/comment', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitComment -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    reply.submitVoteFailure(res, 422);
+    logger.error('middlewares:validator:submitComment -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -332,12 +338,11 @@ router.delete('/opinion/comment', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:deleteComment -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).json({
-      success: false
-    });
+    logger.error('middlewares:validator:deleteComment -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -354,12 +359,11 @@ router.get('/opinion/comments', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getComments -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).json({
-      success: false
-    });
+    logger.error('middlewares:validator:getComments -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
@@ -379,12 +383,11 @@ router.get('/opinion/commentForUser', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
-    res.status(422).json({
-      success: false
-    });
+    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
   }
 });
 
