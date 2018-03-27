@@ -30,7 +30,7 @@ var Post = require('../models/post');
 var Vote = require('../models/vote');
 var config = require('config');
 
-exports.addTextPost = function(req, res) {
+exports.addTextPost = (req, res) => {
   var postContent = req.body.postContent;
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
@@ -62,7 +62,7 @@ exports.addTextPost = function(req, res) {
     });
 };
 
-exports.addComboPost = function(req, res) {
+exports.addComboPost = (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       logger.debug('Routes:content:submitComboPost:multer --' + err);
@@ -102,7 +102,7 @@ exports.addComboPost = function(req, res) {
   });
 };
 
-exports.getNextPosts = function(req, res) {
+exports.getNextPosts = (req, res) => {
   var noOfPosts = Number(req.query.noOfPosts);
   var birthId = req.query.birthId;
   //converting to native date because moment's date doesn't work for some reason
@@ -124,7 +124,9 @@ exports.getNextPosts = function(req, res) {
       }
       Promise.all(promiseList)
         .then((results) => {
-          res.status(200).json(results);
+          res.status(200).json({
+            'posts': results
+          });
         })
         .catch((error) => {
           logger.error(error);
@@ -134,7 +136,7 @@ exports.getNextPosts = function(req, res) {
 };
 
 //get images in posts
-exports.getPostedImage = function(req, res) {
+exports.getPostedImage = (req, res) => {
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
   sharp('./posts/images/' + req.query.postId)
@@ -157,43 +159,18 @@ exports.getPostedImage = function(req, res) {
     });
 };
 
-//get profile images
-exports.getProfileImage = function(req, res) {
-  const dimen = Number(req.query.dimen);
-  const quality = Number(req.query.quality);
-  sharp('./images/' + req.query.birthId)
-    .resize(dimen, dimen)
-    .jpeg({
-      quality: quality
-    })
-    .withoutEnlargement(true)
-    .toBuffer()
-    .then((data) => {
-      res.set('Content-Type', 'image/jpg');
-      res.status(200).send(data);
+exports.getImageMetadata = (req, res) => {
+  sharp('./posts/images/' + req.query.postId)
+    .metadata()
+    .then((metadata) => {
+      res.status(200).json({
+        width: metadata.width,
+        height: metadata.height
+      });
     })
     .catch((err) => {
-      logger.error('routes:content:getProfileImage:sharp -- ' + err);
-      res.status(500).send({
-        success: false
-      });
-    });
-};
-
-//get all post of a specific user
-exports.getSubjectPostsId = function(req, res) {
-  Post.find({
-      creatorId: req.query.birthId
-    })
-    .exec()
-    .then((posts) => {
-      res.status(200).json(posts);
-    })
-    .catch((err) => {
-      logger.debug('routes:content:getSubjectPostsId:find -- ' + err);
-      res.status(500).send({
-        success: false
-      });
+      logger.error(err);
+      res.status(400).send();
     });
 };
 
@@ -246,7 +223,7 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
   });
 });
 
-readPost = (post) => new Promise((resolve, reject) => {
+readPost = post => new Promise((resolve, reject) => {
   readFile(post.textUrl, './posts/texts/')
     .then((result) => {
       resolve({

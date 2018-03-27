@@ -21,9 +21,7 @@ router.use('/', (req, res, next) => {
       jwt.verify(token, tokenSecret, function(err, result) {
         if (err) {
           logger.info('Middleware:token -- Token is invalid');
-          res.json({
-            success: false
-          });
+          res.status(400).send();
         } else {
           /*res.json({
             success: true
@@ -35,9 +33,7 @@ router.use('/', (req, res, next) => {
       });
     } else {
       logger.info('Middleware:token -- No token present in the request');
-      res.json({
-        success: false
-      });
+      res.status(400).send();
     }
   }
 });

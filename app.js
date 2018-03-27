@@ -12,7 +12,7 @@ var slow = require('connect-slow');
 
 //routes
 var index = require('./routes/index');
-var users = require('./routes/users');
+var subject = require('./routes/subject');
 var auth = require('./routes/auth');
 var bot = require('./routes/bot');
 var content = require('./routes/content');
@@ -79,9 +79,9 @@ app.use('/api', tokenMiddleware.router);
 
 //setting up routes hierachy
 app.use('/', index);
-app.use('/users', users);
 app.use('/bot', bot);
 
+app.use('/api/subject', subject);
 app.use('/api/auth', auth.router);
 app.use('/api/content', content.router);
 app.use('/api/opinion', opinion.router);

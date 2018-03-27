@@ -13,8 +13,7 @@ router.get('/nextPosts', contentController.getNextPosts);
 
 router.get('/postedImage', contentController.getPostedImage);
 
-//get all post of a specific user
-router.get('/subjectPostsId', contentController.getSubjectPostsId);
+router.get('/imageMetadata', contentController.getImageMetadata);
 
 module.exports = {
   router

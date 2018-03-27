@@ -82,26 +82,6 @@ exports.getComments = function(req, res) {
     });
 };
 
-exports.getCommentForUser = function(req, res) {
-  var lastDatetime = moment.unix(req.query.lastTimestamp)
-    .toDate();
-  Comment.find({
-    birthId:req.query.birthId,
-    timeCreated: {
-      '$lt': lastDatetime
-    }
-  })
-  .sort('-timeCreated')
-  .limit(Number(req.query.noOfComments))
-  .then((comments) => {
-    commentSuccess(res, comments);
-  })
-  .catch((err) => {
-    logger.debug('routes:opinion:getCommentForUser:find -- ' + err);
-    commentFailure(res, 500);
-  });
-};
-
 var getCommentDetails = comment => new Promise((resolve, reject) => {
   Subject.findOne({
       birthId: comment.birthId

@@ -12,7 +12,7 @@ const professions = ['PEASANT', 'MERCHANT', 'SOLDIER',
   'REBEL', 'OLIGARCH', 'NONE'
 ];
 
-exports.login = function(req, res) {
+exports.login = (req, res) => {
   //login
   logger.info('routes:auth:login -- Preparing to login');
   logger.debug('routes:auth:login -- Subject -> ' + req.body.birthId +
@@ -55,7 +55,7 @@ exports.login = function(req, res) {
     });
 };
 
-exports.generateToken = function(birthId) {
+var generateToken = birthId => {
   const payload = {
     iss: 'Crostata Server',
     sub: birthId.toString()
@@ -66,7 +66,7 @@ exports.generateToken = function(birthId) {
   return token;
 };
 
-exports.signup = function(req, res) {
+exports.signup = (req, res) => {
   //sign up
   var newSubject = new Subject(req.body);
   //check through database
@@ -90,7 +90,7 @@ exports.signup = function(req, res) {
     });
 };
 
-exports.loginToken = function(req, res) {
+exports.loginToken = (req, res) => {
   logger.info('routes:auth:loginToken -- Token valid');
   //logger.info('routes:auth:loginToken -- '+res.locals.token)
   res.status(200).send();

@@ -20,8 +20,6 @@ router.delete('/comment', commentController.deleteComment);
 
 router.get('/comments', commentController.getComments);
 
-router.get('/commentForUser', commentController.getCommentForUser);
-
 module.exports = {
   router
 };
