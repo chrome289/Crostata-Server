@@ -353,7 +353,7 @@ router.get('/subject/comments', [
     min: 0,
     max: 99999999
   }),
-  check('noOfPosts').isLength({
+  check('noOfComments').isLength({
     min: 1,
     max: 20
   }),

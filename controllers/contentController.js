@@ -39,25 +39,21 @@ exports.addTextPost = (req, res) => {
     creatorId: req.body.birthId,
     timeCreated: moment().utc().valueOf(),
     contentType: 'TO',
-    textUrl: filename,
-    imageUrl: '',
+    text: postContent,
+    imageId: '',
     upVotes: 0,
     downVotes: 0,
     isCensored: false,
     isGenerated: req.body.generate
   });
-  //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
-  writeTextToFile(filename, postContent)
-    .then((result) => {
-      saveNewPostDB(newPost);
-    })
+  saveNewPostDB(newPost)
     .then((result) => {
       logger.debug('Routes:content:submitTextPost -- ' +
         'Post saved -> ' + newPost.postId);
       res.status(200).send();
     })
-    .catch((error) => {
-      logger.debug('Routes:content:submitTextPost:writeTextToFile --' + error);
+    .catch((err) => {
+      logger.debug('Routes:content:submitTextPost --' + err);
       res.status(500).send();
     });
 };
@@ -77,18 +73,15 @@ exports.addComboPost = (req, res) => {
         creatorId: req.body.birthId,
         timeCreated: moment().utc().valueOf(),
         contentType: 'IT',
-        textUrl: filename,
-        imageUrl: filename,
+        text: postContent,
+        imageId: filename,
         upVotes: 0,
         downVotes: 0,
         isCensored: false,
         isGenerated: req.body.generate
       });
       //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
-      writeTextToFile(filename, postContent)
-        .then((result) => {
-          saveNewPostDB(newPost);
-        })
+      saveNewPostDB(newPost)
         .then((result) => {
           logger.debug('Routes:content:submitComboPost -- ' +
             'Post saved -> ' + newPost.postId);
@@ -175,39 +168,26 @@ exports.getImageMetadata = (req, res) => {
 };
 
 getSuperPost = (originalPost, birthId) => new Promise((resolve, reject) => {
-  var promise1 = readPost(originalPost);
-  var promise2 = Subject.findOne({
-    birthId: originalPost.creatorId
-  }).exec();
-  var promise3 = Vote.findOne({
-    birthId: birthId,
-    postId: originalPost.postId
-  }).exec();
-  Promise.all([promise1, promise2, promise3])
-    .then((values) => {
-      //  logger.debug(values)
-      var tempResult = values[0];
-      tempResult.creatorName = values[1].name;
-      tempResult.opinion = (values[2] == null) ? 0 : values[2].value;
-      resolve(tempResult);
-    })
-    .catch((error) => {
-      logger.error(error);
-      reject(error);
-    });
-});
+  originalPost.votes = originalPost.upVotes - originalPost.downVotes;
 
-writeTextToFile = (filename, postContent) => new Promise((resolve, reject) => {
-  fs.writeFile('./posts/texts/' + filename, postContent, 'utf8', (err) => {
-    if (err) {
-      logger.debug('Routes:content:writeTextToFile:fs --' + err);
+  Subject.findOne({
+      birthId: originalPost.creatorId
+    }).exec()
+    .then((subject) => {
+      originalPost.creatorName = subject.name;
+      return Vote.findOne({
+        birthId: birthId,
+        postId: originalPost.postId
+      }).exec();
+    })
+    .then((vote) => {
+      originalPost.opinion = (vote == null) ? 0 : vote.value;
+      resolve(originalPost);
+    })
+    .catch((err) => {
+      logger.error(err);
       reject(err);
-    } else {
-      logger.debug('Routes:content:writeTextToFile -- ' +
-        'text file written to disk ');
-      resolve();
-    }
-  });
+    });
 });
 
 saveNewPostDB = newPost => new Promise((resolve, reject) => {
@@ -221,24 +201,6 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
       resolve();
     }
   });
-});
-
-readPost = post => new Promise((resolve, reject) => {
-  readFile(post.textUrl, './posts/texts/')
-    .then((result) => {
-      resolve({
-        postId: post.postId,
-        creatorId: post.creatorId,
-        timeCreated: post.timeCreated,
-        contentType: post.contentType,
-        text: result,
-        votes: post.upVotes - post.downVotes,
-        isCensored: post.isCensored
-      });
-    })
-    .catch((err) => {
-      reject(err);
-    });
 });
 
 readFile = (path, root) => new Promise((resolve, reject) => {

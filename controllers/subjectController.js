@@ -115,19 +115,36 @@ exports.getProfileImage = (req, res) => {
 exports.getComment = function(req, res) {
   var lastDatetime = moment.unix(req.query.lastTimestamp)
     .toDate();
+
+  var commentsResult;
   Comment.find({
       birthId: req.query.birthId,
       timeCreated: {
         '$lt': lastDatetime
       }
     })
+    .lean()
     .sort('-timeCreated')
     .limit(Number(req.query.noOfComments))
     .then((comments) => {
-      res.status(200).json({
-        success: true,
-        comments: comments
-      });
+      commentsResult = comments;
+      var postList = [];
+      for (var x = 0; x < comments.length; x++) {
+        postList.push(String(comments[x].postId));
+      }
+      return Post.find({
+          postId: {
+            '$in': postList
+          }
+        }, ['-_id', 'postId', 'timeCreated', 'contentType',
+          'text', 'imageId'
+        ])
+        .lean()
+        .exec();
+    })
+    .then((posts) => {
+      logger.debug(posts[0]);
+      res.status(200).json(mapPostsToComments(posts, commentsResult));
     })
     .catch((err) => {
       logger.debug('routes:opinion:getCommentForUser:find -- ' + err);
@@ -202,3 +219,14 @@ var getRank = (birthId) => new Promise((resolve, reject) => {
       reject(500);
     });
 });
+
+var mapPostsToComments = (posts, comments) => {
+  for (var x = 0; x < comments.length; x++) {
+    for (var y = 0; y < posts.length; y++) {
+      if (posts[y].postId === comments[x].postId) {
+        comments[x].post = posts[y];
+      }
+    }
+  }
+  return comments;
+};
