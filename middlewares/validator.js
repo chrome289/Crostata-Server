@@ -139,7 +139,7 @@ router.post('/content/comboPost', [
 });
 
 router.get('/content/nextPostsList', [
-  check('noOfPosts').isLength({
+  check('noOfPosts').isInt({
     min: 1,
     max: 20
   }),
@@ -302,7 +302,7 @@ router.delete('/opinion/comment', [
 
 router.get('/opinion/comments', [
   check('postId').exists(),
-  check('noOfComments').isLength({
+  check('noOfComments').isInt({
     min: 1,
     max: 20
   }),
@@ -353,7 +353,7 @@ router.get('/subject/comments', [
     min: 0,
     max: 99999999
   }),
-  check('noOfComments').isLength({
+  check('noOfComments').isInt({
     min: 1,
     max: 20
   }),
@@ -435,6 +435,30 @@ router.get('/subject/info', [
     min: 0,
     max: 99999999
   })
+], (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    next();
+  } else {
+    //validation failed.
+    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
+    res.status(422).send();
+  }
+});
+
+router.get('/subject/combinedContributions', [
+  check('birthId').isInt({
+    min: 0,
+    max: 99999999
+  }),
+  check('size').isInt({
+    min: 1,
+    max: 10 //result has both comments and posts
+  }),
+  check('lastTimestamp').isFloat()
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {

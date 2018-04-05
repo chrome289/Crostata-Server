@@ -48,6 +48,7 @@ exports.getRank = (req, res) => {
     });
 };
 
+//get charts
 exports.charts = (req, res) => {
   Subject.find({}, ['birthId', 'name', 'patriotIndex', '-_id'])
     .sort({
@@ -66,25 +67,37 @@ exports.charts = (req, res) => {
     });
 };
 
-exports.getPosts = (req, res) => {
-  var lastDatetime = moment.unix(req.query.lastTimestamp)
-    .toDate();
-  Post.find({
-      creatorId: req.query.birthId,
-      timeCreated: {
-        '$lt': lastDatetime
-      }
+//get posts
+exports.getPost = (req, res) => {
+  fetchPosts(req.query.lastTimestamp, req.query.birthId)
+    .then((resolve) => {
+      res.status(200).json({
+        posts: resolve
+      });
     })
-    .sort('-timeCreated')
-    .limit(10)
-    .exec()
-    .then((posts) => {
-      res.status(200).json(posts);
-    })
-    .catch((err) => {
-      logger.debug('routes:subject:getSubjectPostsId:find -- ' + err);
+    .catch((reject) => {
+      logger.debug('routes:subject:getSubjectPostsId:find -- ' + reject);
       res.status(500).send({
         success: false
+      });
+    });
+};
+
+//get comments
+exports.getComment = function(req, res) {
+  fetchComments(
+      req.query.lastTimestamp, req.query.birthId, req.query.noOfComments)
+    .then((resolve) => {
+      res.status(200)
+        .json({
+          comments: resolve
+        });
+    })
+    .catch((reject) => {
+      logger.debug('routes:opinion:getCommentForUser:find -- ' + reject);
+      res.status(422).json({
+        success: false,
+        comments: [],
       });
     });
 };
@@ -104,53 +117,10 @@ exports.getProfileImage = (req, res) => {
       res.set('Content-Type', 'image/jpg');
       res.status(200).send(data);
     })
-    .catch((err) => {
-      logger.error('routes:subject:getProfileImage:sharp -- ' + err);
+    .catch((reject) => {
+      logger.error('routes:subject:getProfileImage:sharp -- ' + reject);
       res.status(500).send({
         success: false
-      });
-    });
-};
-
-exports.getComment = function(req, res) {
-  var lastDatetime = moment.unix(req.query.lastTimestamp)
-    .toDate();
-
-  var commentsResult;
-  Comment.find({
-      birthId: req.query.birthId,
-      timeCreated: {
-        '$lt': lastDatetime
-      }
-    })
-    .lean()
-    .sort('-timeCreated')
-    .limit(Number(req.query.noOfComments))
-    .then((comments) => {
-      commentsResult = comments;
-      var postList = [];
-      for (var x = 0; x < comments.length; x++) {
-        postList.push(String(comments[x].postId));
-      }
-      return Post.find({
-          postId: {
-            '$in': postList
-          }
-        }, ['-_id', 'postId', 'timeCreated', 'contentType',
-          'text', 'imageId'
-        ])
-        .lean()
-        .exec();
-    })
-    .then((posts) => {
-      logger.debug(posts[0]);
-      res.status(200).json(mapPostsToComments(posts, commentsResult));
-    })
-    .catch((err) => {
-      logger.debug('routes:opinion:getCommentForUser:find -- ' + err);
-      res.status(422).json({
-        success: false,
-        comments: [],
       });
     });
 };
@@ -195,6 +165,30 @@ exports.getInfo = (req, res) => {
     });
 };
 
+//get overview
+exports.overview = (req, res) => {
+  var resultPosts, resultComments;
+  var lastTimestamp = req.query.lastTimestamp,
+    birthId = req.query.birthId,
+    size = req.query.size;
+  fetchComments(lastTimestamp, birthId, size)
+    .then((resolve) => {
+      resultComments = resolve;
+      return fetchPosts(lastTimestamp, birthId, size);
+    })
+    .then((resolve) => {
+      resultPosts = resolve;
+      res.status(200).json({
+        posts: resultPosts,
+        comments: resultComments
+      });
+    })
+    .catch((reject) => {
+      logger.error(reject);
+      res.status(500).json({});
+    });
+};
+
 var getRank = (birthId) => new Promise((resolve, reject) => {
   Subject.find({}, ['patriotIndex', 'name', 'birthId'])
     .sort({
@@ -230,3 +224,68 @@ var mapPostsToComments = (posts, comments) => {
   }
   return comments;
 };
+
+var fetchComments = (lastTimestamp, birthId, size) =>
+  new Promise((resolve, reject) => {
+    var lastDatetime = moment.unix(lastTimestamp)
+      .toDate();
+
+    var commentsResult, postsResult;
+    Comment.find({
+        birthId: birthId,
+        timeCreated: {
+          '$lt': lastDatetime
+        }
+      })
+      .sort('-timeCreated')
+      .lean()
+      .limit(Number(size))
+      .then((comments) => {
+        commentsResult = comments;
+        var postList = [];
+        for (var x = 0; x < comments.length; x++) {
+          postList.push(String(comments[x].postId));
+        }
+        return Post.find({
+            postId: {
+              '$in': postList
+            }
+          }, ['-_id', 'postId', 'creatorName', 'timeCreated', 'contentType',
+            'text', 'imageId'
+          ])
+          .lean()
+          .exec();
+      })
+      .then((posts) => {
+        postsResult = posts;
+        var subjectList = [];
+        for (var x = 0; x < posts.length; x++) {
+          subjectList.push(String(posts[x].creatorId));
+        }
+        resolve(mapPostsToComments(postsResult, commentsResult));
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+
+var fetchPosts = (lastTimestamp, birthId, size) =>
+  new Promise((resolve, reject) => {
+    var lastDatetime = moment.unix(lastTimestamp)
+      .toDate();
+    Post.find({
+        creatorId: birthId,
+        timeCreated: {
+          '$lt': lastDatetime
+        }
+      })
+      .sort('-timeCreated')
+      .limit(Number(size))
+      .exec()
+      .then((posts) => {
+        resolve(posts);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });

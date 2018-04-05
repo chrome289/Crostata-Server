@@ -46,14 +46,18 @@ exports.addTextPost = (req, res) => {
     isCensored: false,
     isGenerated: req.body.generate
   });
-  saveNewPostDB(newPost)
+  getSubjectName(req.body.birthId)
+    .then((resolve) => {
+      newPost.creatorName = resolve;
+      return saveNewPostDB(newPost);
+    })
     .then((result) => {
       logger.debug('Routes:content:submitTextPost -- ' +
         'Post saved -> ' + newPost.postId);
       res.status(200).send();
     })
     .catch((err) => {
-      logger.debug('Routes:content:submitTextPost --' + err);
+      logger.error('Routes:content:submitTextPost --' + err);
       res.status(500).send();
     });
 };
@@ -66,7 +70,6 @@ exports.addComboPost = (req, res) => {
     } else {
       var postContent = req.body.postContent;
       const ext = '.txt';
-      //logger.silly(req.file.filename);
       var filename = req.file.file;
       var newPost = new Post({
         postId: filename,
@@ -80,15 +83,18 @@ exports.addComboPost = (req, res) => {
         isCensored: false,
         isGenerated: req.body.generate
       });
-      //logger.silly('date' + newPost.timeCreated + '-$$$-' + moment.format());
-      saveNewPostDB(newPost)
+      getSubjectName(req.body.birthId)
+        .then((resolve) => {
+          newPost.creatorName = resolve;
+          return saveNewPostDB(newPost);
+        })
         .then((result) => {
           logger.debug('Routes:content:submitComboPost -- ' +
             'Post saved -> ' + newPost.postId);
           res.status(200).send();
         })
         .catch((error) => {
-          logger.debug('Routes:content:submitComboPost:writeFile --' + err);
+          logger.error('Routes:content:submitComboPost:writeFile --' + err);
           res.status(500).send();
         });
     }
@@ -113,7 +119,7 @@ exports.getNextPosts = (req, res) => {
     .exec()
     .then((nextPostsList) => {
       for (var x = 0; x < nextPostsList.length; x++) {
-        promiseList.push(getSuperPost(nextPostsList[x], birthId));
+        promiseList.push(getPostVotes(nextPostsList[x], birthId));
       }
       Promise.all(promiseList)
         .then((results) => {
@@ -167,25 +173,31 @@ exports.getImageMetadata = (req, res) => {
     });
 };
 
-getSuperPost = (originalPost, birthId) => new Promise((resolve, reject) => {
-  originalPost.votes = originalPost.upVotes - originalPost.downVotes;
-
+getSubjectName = birthId => new Promise((resolve, reject) => {
   Subject.findOne({
-      birthId: originalPost.creatorId
+      birthId: birthId
     }).exec()
     .then((subject) => {
-      originalPost.creatorName = subject.name;
-      return Vote.findOne({
-        birthId: birthId,
-        postId: originalPost.postId
-      }).exec();
-    })
-    .then((vote) => {
-      originalPost.opinion = (vote == null) ? 0 : vote.value;
-      resolve(originalPost);
+      resolve(subject.name);
     })
     .catch((err) => {
       logger.error(err);
+      reject(err);
+    });
+});
+
+getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
+post.votes = post.upVotes - post.downVotes;
+
+  Vote.findOne({
+      birthId: birthId,
+      postId: post.postId
+    }).exec()
+    .then((vote) => {
+      post.opinion = (vote == null) ? 0 : vote.value;
+      resolve(post);
+    })
+    .catch((err) => {
       reject(err);
     });
 });

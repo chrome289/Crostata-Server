@@ -11,10 +11,12 @@ router.get('/charts', subjectController.charts);
 
 router.get('/profileImage', subjectController.getProfileImage);
 
-router.get('/posts', subjectController.getPosts);
+router.get('/posts', subjectController.getPost);
 
 router.get('/comments', subjectController.getComment);
 
 router.get('/info', subjectController.getInfo);
+
+router.get('/overview', subjectController.overview);
 
 module.exports = router;

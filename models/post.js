@@ -4,6 +4,7 @@ var Schema = mongoose.Schema;
 const PostSchema = new Schema({
   postId: String,
   creatorId: String,
+  creatorName:String,
   timeCreated: Date,
   contentType: String,
   text: String,
