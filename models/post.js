@@ -2,7 +2,6 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 const PostSchema = new Schema({
-  postId: String,
   creatorId: String,
   creatorName:String,
   timeCreated: Date,

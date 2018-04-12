@@ -3,7 +3,9 @@ var router = express.Router();
 var randomName = require('node-random-name');
 var randomNumberGen = require('random-seed');
 var randomPasswordGen = require('generate-password');
-var chance = require('chance');
+
+var Chance = require('chance');
+var chance = new Chance();
 var fs = require('fs');
 
 var logger = require('../utils/logger');
@@ -12,12 +14,12 @@ var Subject = require('../models/subject');
 
 var newSubjects = [];
 
-const professions = ['PEASANT', 'MERCHANT', 'SOLDIER',
-  'REBEL', 'OLIGARCH', 'NONE'
+const professions = ['NONE', 'REBEL', 'PEASANT', 'SOLDIER',
+  'MERCHANT', 'OLIGARCH'
 ];
 
 router.get('/generate', (req, res) => {
-  for (var x = 0; x < 1000; x++) {
+  for (var x = 0; x < 10000; x++) {
     var newSubject = new Subject();
     var randomNumber = ~~((randomNumberGen.create().random() * 80000000) +
       10000000);
@@ -37,13 +39,17 @@ router.get('/generate', (req, res) => {
     newSubject.profession = professions[getProfessionID(randomNumber)];
     newSubject.gender = (randomNumber % 2 === 0) ? 0 : 1;
     newSubject.picture = newSubject.birthId + '.jpg';
-    newSubject.patriotIndex = 1000 - (randomNumber % 1999);
     newSubject.alive = (randomNumber % 10 === 0) ? 0 : 1;
+
     newSubject.informer = (randomNumber % 10 === 0) ? 1 : 0;
+    newSubject.moneyDonated = getMoneyDonated(randomNumber);
+    newSubject.reportsMade = 0; //getMadeReports(randomNumber);
+    newSubject.reportsAgainst = 0; //getAgainstReports(randomNumber);
+    newSubject.patriotIndex = getPatriotIndex(newSubject, randomNumber);
     newSubjects.push(newSubject);
   }
   //call addSubject function from auth
-  fs.writeFile('./Postman/signup.TEST.json', JSON.stringify(newSubjects),
+  fs.writeFile('../../Postman/signup.TEST.json', JSON.stringify(newSubjects),
     (err) => {
       if (err) {
         logger.error(err);
@@ -60,20 +66,103 @@ router.get('/generate', (req, res) => {
 });
 
 //probabilty for professions
-function getProfessionID(randomNumber) {
+var getProfessionID = randomNumber => {
   if (randomNumber % 5 === 0) {
-    return 2;
-  } else if (randomNumber % 7 === 0) {
     return 3;
-  } else if (randomNumber % 11 === 0) {
-    return 5;
-  } else if (randomNumber % 17 === 0) {
+  } else if (randomNumber % 7 === 0) {
     return 1;
-  } else if (randomNumber % 53 === 0) {
-    return 4;
-  } else {
+  } else if (randomNumber % 11 === 0) {
     return 0;
+  } else if (randomNumber % 17 === 0) {
+    return 4;
+  } else if (randomNumber % 53 === 0) {
+    return 5;
+  } else {
+    return 2;
   }
-}
+};
+
+var getMoneyDonated = randomNumber => {
+  var power = getProfessionID(randomNumber);
+  if (power === 0 || power === 1) {
+    return 0;
+  } else {
+    var temp = chance.natural({
+      min: Math.pow(10, power),
+      max: Math.pow(50, power)
+    });
+    return temp;
+  }
+};
+
+var getMadeReports = randomNumber => {
+  var power = getProfessionID(randomNumber);
+  if (power === 0 || power === 1) {
+    return 0;
+  } else {
+    var temp = chance.natural({
+      min: 0,
+      max: 5 * power
+    });
+    return temp;
+  }
+};
+
+var getAgainstReports = randomNumber => {
+  var power = 5 - Number(getProfessionID(randomNumber));
+  if (power === 0 || power === 5) {
+    return 0;
+  } else {
+    var temp = chance.natural({
+      min: 0,
+      max: 5 * (5 - power)
+    });
+    return temp;
+  }
+};
+
+var getPatriotIndex = (newSubject, randomNumber) => {
+  var result = 0;
+
+  if (newSubject.moneyDonated > 0) {
+    result += (newSubject.moneyDonated / 1000);
+  }
+  result = Math.floor(result);
+  result += ((newSubject.reportsMade * 10) - (newSubject.reportsAgainst * 10));
+
+  var professionID = getProfessionID(randomNumber);
+  switch (professionID) {
+    case 1:
+      result -= 500;
+      break;
+    case 5:
+      result += 200;
+      break;
+    case 4:
+      result += 100;
+      break;
+    case 3:
+      result += 50;
+      break;
+    case 2:
+      result += 20;
+      break;
+    default:
+      result += 10;
+      break;
+  }
+
+  if (newSubject.informer === 1) {
+    result += 200;
+  }
+
+  if (result > 999) {
+    result = 999;
+  } else if (result < -999) {
+    result = -999;
+  }
+
+  return result;
+};
 
 module.exports = router;

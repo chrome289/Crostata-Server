@@ -69,17 +69,13 @@ exports.charts = (req, res) => {
 
 //get posts
 exports.getPost = (req, res) => {
-  fetchPosts(req.query.lastTimestamp, req.query.birthId)
+  fetchPosts(req.query.lastTimestamp, req.query.birthId, req.query.size)
     .then((resolve) => {
-      res.status(200).json({
-        posts: resolve
-      });
+      res.status(200).json(resolve);
     })
     .catch((reject) => {
       logger.debug('routes:subject:getSubjectPostsId:find -- ' + reject);
-      res.status(500).send({
-        success: false
-      });
+      res.status(500).send();
     });
 };
 
@@ -88,17 +84,11 @@ exports.getComment = function(req, res) {
   fetchComments(
       req.query.lastTimestamp, req.query.birthId, req.query.noOfComments)
     .then((resolve) => {
-      res.status(200)
-        .json({
-          comments: resolve
-        });
+      res.status(200).json(resolve);
     })
     .catch((reject) => {
       logger.debug('routes:opinion:getCommentForUser:find -- ' + reject);
-      res.status(422).json({
-        success: false,
-        comments: [],
-      });
+      res.status(422).send();
     });
 };
 
@@ -130,9 +120,7 @@ exports.getInfo = (req, res) => {
   var subjectInfo;
   Subject.findOne({
       birthId: birthId
-    }, ['-_id', 'birthId', 'name', 'dob', 'profession',
-      'gender', 'patriotIndex', 'alive'
-    ])
+    }, ['-_id', '-__v'])
     .lean()
     .exec()
     .then((subject) => {
@@ -217,7 +205,7 @@ var getRank = (birthId) => new Promise((resolve, reject) => {
 var mapPostsToComments = (posts, comments) => {
   for (var x = 0; x < comments.length; x++) {
     for (var y = 0; y < posts.length; y++) {
-      if (posts[y].postId === comments[x].postId) {
+      if (posts[y]._id === comments[x].postId) {
         comments[x].post = posts[y];
       }
     }
@@ -247,10 +235,10 @@ var fetchComments = (lastTimestamp, birthId, size) =>
           postList.push(String(comments[x].postId));
         }
         return Post.find({
-            postId: {
+            _id: {
               '$in': postList
             }
-          }, ['-_id', 'postId', 'creatorName', 'timeCreated', 'contentType',
+          }, ['_id', 'creatorName', 'timeCreated', 'contentType',
             'text', 'imageId'
           ])
           .lean()

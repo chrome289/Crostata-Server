@@ -35,7 +35,6 @@ exports.addTextPost = (req, res) => {
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
   var newPost = new Post({
-    postId: filename,
     creatorId: req.body.birthId,
     timeCreated: moment().utc().valueOf(),
     contentType: 'TO',
@@ -53,7 +52,7 @@ exports.addTextPost = (req, res) => {
     })
     .then((result) => {
       logger.debug('Routes:content:submitTextPost -- ' +
-        'Post saved -> ' + newPost.postId);
+        'Post saved -> ' + newPost._id);
       res.status(200).send();
     })
     .catch((err) => {
@@ -72,7 +71,6 @@ exports.addComboPost = (req, res) => {
       const ext = '.txt';
       var filename = req.file.file;
       var newPost = new Post({
-        postId: filename,
         creatorId: req.body.birthId,
         timeCreated: moment().utc().valueOf(),
         contentType: 'IT',
@@ -90,7 +88,7 @@ exports.addComboPost = (req, res) => {
         })
         .then((result) => {
           logger.debug('Routes:content:submitComboPost -- ' +
-            'Post saved -> ' + newPost.postId);
+            'Post saved -> ' + newPost._id);
           res.status(200).send();
         })
         .catch((error) => {
@@ -105,8 +103,8 @@ exports.getNextPosts = (req, res) => {
   var noOfPosts = Number(req.query.noOfPosts);
   var birthId = req.query.birthId;
   //converting to native date because moment's date doesn't work for some reason
-  var lastDatetime = moment.unix(req.query.lastTimestamp)
-    .toDate();
+  var lastDatetime = moment(Number(req.query.lastTimestamp)).utc().format();
+  logger.debug('--' + lastDatetime + '--');
   var result = [];
   var promiseList = [];
   Post.find({
@@ -123,9 +121,7 @@ exports.getNextPosts = (req, res) => {
       }
       Promise.all(promiseList)
         .then((results) => {
-          res.status(200).json({
-            'posts': results
-          });
+          res.status(200).json(results);
         })
         .catch((error) => {
           logger.error(error);
@@ -138,7 +134,7 @@ exports.getNextPosts = (req, res) => {
 exports.getPostedImage = (req, res) => {
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
-  sharp('./posts/images/' + req.query.postId)
+  sharp('./posts/images/' + req.query.imageId)
     .resize(dimen, null)
     .jpeg({
       quality: quality
@@ -159,7 +155,7 @@ exports.getPostedImage = (req, res) => {
 };
 
 exports.getImageMetadata = (req, res) => {
-  sharp('./posts/images/' + req.query.postId)
+  sharp('./posts/images/' + req.query.imageId)
     .metadata()
     .then((metadata) => {
       res.status(200).json({
@@ -178,7 +174,11 @@ getSubjectName = birthId => new Promise((resolve, reject) => {
       birthId: birthId
     }).exec()
     .then((subject) => {
-      resolve(subject.name);
+      if (subject == null) {
+        reject(422);
+      } else {
+        resolve(subject.name);
+      }
     })
     .catch((err) => {
       logger.error(err);
@@ -187,15 +187,18 @@ getSubjectName = birthId => new Promise((resolve, reject) => {
 });
 
 getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
-post.votes = post.upVotes - post.downVotes;
+  var newPost = post.toObject();
+  newPost.votes = newPost.upVotes - newPost.downVotes;
 
   Vote.findOne({
       birthId: birthId,
-      postId: post.postId
+      _id: newPost._id
     }).exec()
     .then((vote) => {
-      post.opinion = (vote == null) ? 0 : vote.value;
-      resolve(post);
+      newPost.opinion = (vote == null) ? 0 : vote.value;
+
+      console.log('nextPostsList[x].opinion ' + newPost);
+      resolve(newPost);
     })
     .catch((err) => {
       reject(err);
@@ -209,7 +212,7 @@ saveNewPostDB = newPost => new Promise((resolve, reject) => {
       reject(err);
     } else {
       logger.debug('Routes:content:saveNewPostDB -- ' +
-        'Post saved -> ' + post.postId);
+        'Post saved -> ' + post._id);
       resolve();
     }
   });

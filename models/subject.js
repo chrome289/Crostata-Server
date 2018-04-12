@@ -11,7 +11,10 @@ const SubjectSchema = new Schema({
   picture: String,
   patriotIndex: Number,
   alive: Boolean,
-  informer: Boolean
+  informer: Boolean,
+  moneyDonated: Number,
+  reportsMade: Number,
+  reportsAgainst: Number
 });
 
 module.exports = mongoose.models.Subject || mongoose.model(

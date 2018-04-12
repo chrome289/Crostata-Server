@@ -56,7 +56,7 @@ router.post('/auth/signup', [
 });
 
 router.post('/auth/login', [
-  check('birthId').isLength({
+  check('birthId').isInt({
     min: 0,
     max: 99999999
   }),

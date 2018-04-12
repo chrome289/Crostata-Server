@@ -151,7 +151,7 @@ var updateVoteTotals = postId => new Promise((resolve, reject) => {
         }
       }
       Post.findOneAndUpdate({
-          postId: postId
+          _id: postId
         }, {
           upVotes: totalUpVotes,
           downVotes: totalDownVotes
