@@ -10,6 +10,7 @@ const PostSchema = new Schema({
   imageId: String,
   upVotes: Number,
   downVotes: Number,
+  comments: Number,
   isCensored: Boolean,
   isGenerated: Boolean,
 });

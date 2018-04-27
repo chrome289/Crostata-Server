@@ -1,24 +1,49 @@
 var express = require('express');
 var router = express.Router();
 
-var winston = require('winston');
+const winston = require('winston');
+const {
+  createLogger,
+  format,
+  transports
+} = winston;
+const {
+  combine,
+  timestamp,
+  label,
+  prettyPrint,
+  printf
+} = format;
 
-winston.emitErrs = true;
+const myFormat = printf(info => {
+  return `${info.timestamp} ${info.level}: ${info.message}`;
+});
 
-var logger = new winston.Logger({
+const logger = createLogger({
+  format: combine(
+    format.splat(),
+    format.simple(),
+    timestamp(),
+    format.colorize(),
+    prettyPrint(),
+    myFormat
+  ),
   transports: [
     new(winston.transports.Console)({
       timestamp: (new Date()).toLocaleTimeString(),
-      colorize: true,
       level: 'silly'
     }),
     new(winston.transports.File)({
-      timestamp: (new Date()).toLocaleTimeString(),
-      filename: 'err.log',
+      filename: 'logs/err.log',
       level: 'error'
+    }),
+    new(winston.transports.File)({
+      filename: 'logs/out.log',
+      level: 'info'
     })
   ]
 });
-logger.info('Utils: Logger -- logger setup');
+
+logger.info('[Logger] Logger init complete');
 
 module.exports = logger;

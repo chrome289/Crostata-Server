@@ -40,14 +40,12 @@ router.post('/auth/signup', [
   check('alive').isBoolean(),
   check('informer').isBoolean()
 ], (req, res, next) => {
-
-  logger.debug('name ' + req.body.name);
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     next();
   } else {
     //validation failed.
-    logger.debug('middlewares:validator:signup -- validation ' +
+    logger.warn('[Validator] [POST]auth:signup - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -67,9 +65,10 @@ router.post('/auth/login', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:login -- validation ' + JSON.stringify({
-      errors: errors.mapped()
-    }));
+    logger.warn('[Validator] [POST]auth:login - ' +
+      JSON.stringify({
+        errors: errors.mapped()
+      }));
     res.status(422).send();
   }
 });
@@ -82,7 +81,7 @@ router.post('/auth/loginToken', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:loginToken -- validation ' +
+    logger.warn('[Validator] [POST]auth:loginToken - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -105,7 +104,7 @@ router.post('/content/textPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitTextPost -- validation ' +
+    logger.warn('[Validator] [POST]content:textPost - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -130,7 +129,7 @@ router.post('/content/comboPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitComboPost -- validation ' +
+    logger.warn('[Validator] [POST]content:comboPost - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -154,7 +153,7 @@ router.get('/content/nextPostsList', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getNextPost -- validation ' +
+    logger.warn('[Validator] [GET]content:nextPostsList - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -163,7 +162,7 @@ router.get('/content/nextPostsList', [
 });
 
 router.get('/content/postedImage', [
-  check('postId').exists(),
+  check('imageId').exists(),
   check('dimen').isInt({
     min: 48,
     max: 2160
@@ -178,7 +177,7 @@ router.get('/content/postedImage', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getPostedImage -- validation ' +
+    logger.warn('[Validator] [GET]content:postedImage - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -198,7 +197,7 @@ router.post('/opinion/vote', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitVote -- validation ' +
+    logger.warn('[Validator] [POST]opinion:vote - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -218,7 +217,7 @@ router.delete('/opinion/vote', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:deletevote -- validation ' +
+    logger.warn('[Validator] [DELETE]opinion:vote - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -234,7 +233,7 @@ router.get('/opinion/voteTotal', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getVoteTotal -- validation ' +
+    logger.warn('[Validator] [GET]opinion:voteTotal - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -254,7 +253,7 @@ router.get('/opinion/votePerPost', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getVotePerPost -- validation ' +
+    logger.warn('[Validator] [GET]opinion:votePerPost - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -276,7 +275,7 @@ router.post('/opinion/comment', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:submitComment -- validation ' +
+    logger.warn('[Validator] [POST]opinion:comment - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -292,7 +291,7 @@ router.delete('/opinion/comment', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:deleteComment -- validation ' +
+    logger.warn('[Validator] [DELETE]opinion:comment - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -313,7 +312,7 @@ router.get('/opinion/comments', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getComments -- validation ' +
+    logger.warn('[Validator] [GET]opinion:comments - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -340,7 +339,7 @@ router.get('/subject/profileImage', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getProfileImage -- validation ' +
+    logger.warn('[Validator] [GET]subject:profileImage - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -364,7 +363,7 @@ router.get('/subject/comments', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+    logger.warn('[Validator] [GET]subject:comments - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -384,7 +383,7 @@ router.get('/subject/patriotIndex', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+    logger.warn('[Validator] [GET]subject:patriotIndex - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -403,7 +402,7 @@ router.get('/subject/rank', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+    logger.warn('[Validator] [GET]subject:rank - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -422,7 +421,7 @@ router.get('/subject/posts', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getSubjectPostsId -- validation ' +
+    logger.warn('[Validator] [GET]subject:posts - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -441,7 +440,7 @@ router.get('/subject/info', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+    logger.warn('[Validator] [GET]subject:info - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -465,7 +464,7 @@ router.get('/subject/combinedContributions', [
     next();
   } else {
     //validation failed.
-    logger.error('middlewares:validator:getCommentForUser -- validation ' +
+    logger.warn('[Validator] [GET]subject:combinedContributions - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));

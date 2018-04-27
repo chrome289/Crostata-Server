@@ -40,7 +40,8 @@ app.set('port', process.env.PORT || 3000);
 //only spinning up server when mocha is not watching (--watch)
 if (!module.parent) {
   var server = app.listen(app.get('port'), function() {
-    logger.debug('Express server listening on port ' + server.address().port);
+    logger.info('[App] Express server listening on port ' +
+      server.address().port);
   });
 }
 
@@ -85,8 +86,6 @@ app.use('/api/subject', subject);
 app.use('/api/auth', auth.router);
 app.use('/api/content', content.router);
 app.use('/api/opinion', opinion.router);
-
-
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

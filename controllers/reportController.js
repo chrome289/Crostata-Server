@@ -11,6 +11,9 @@ var Subject = require('../models/subject');
 
 //contentType = 0=profile,1=post,2=comment
 exports.addReport = (req, res) => {
+  logger.info('[ReportController] addReport' +
+    ' - Subject %s adding report against %s',
+    req.body.reporterId, req.body.creatorId);
   var newReport = new Report();
   newReport.contentId = req.body.contentId;
   newReport.contentType = req.body.contentType;
@@ -35,24 +38,30 @@ exports.addReport = (req, res) => {
       if (report == null) {
         return newReport.save();
       } else {
-        //  logger.debug(report);
+        logger.verbose('[ReportController] addReport:findOne ' +
+          '- subject %s already reported', req.body.creatorId);
         res.status(422).send();
       }
     })
     .then((report) => {
+      logger.verbose('[ReportController] addReport:findOne ' +
+        '- updating patriot index');
       return updatePatriotIndex(report);
     })
     .then((resolve) => {
+      logger.verbose('[ReportController] addReport:findOne ' +
+        '- subject %s reported successfully', req.body.creatorId);
       res.status(200).send();
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[ReportController] addReport:findOne - ' + err);
       res.status(500).send();
     });
 };
 
 var updatePatriotIndex = report => new Promise((resolve, err) => {
   if (report.isReviewed && report.isAccepted) {
+    //adding patriot points for reporter
     Subject.findOne({
         birthId: report.reporterId
       })
@@ -68,6 +77,7 @@ var updatePatriotIndex = report => new Promise((resolve, err) => {
         }).exec();
       })
       .then((subject) => {
+        //removing patriot points from reportee
         return Subject.findOne({
           birthId: report.creatorId
         });
@@ -87,7 +97,7 @@ var updatePatriotIndex = report => new Promise((resolve, err) => {
         resolve();
       })
       .catch((err) => {
-        logger.error(err);
+        logger.warn('[ReportController] updatePatriotIndex - ' + err);
         err(err);
       });
   } else {

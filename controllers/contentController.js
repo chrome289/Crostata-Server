@@ -31,6 +31,8 @@ var Vote = require('../models/vote');
 var config = require('config');
 
 exports.addTextPost = (req, res) => {
+  logger.info('[ContentController] Adding textpost for subject %s',
+    req.body.birthId);
   var postContent = req.body.postContent;
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
@@ -42,6 +44,7 @@ exports.addTextPost = (req, res) => {
     imageId: '',
     upVotes: 0,
     downVotes: 0,
+    comments: 0,
     isCensored: false,
     isGenerated: req.body.generate
   });
@@ -51,33 +54,37 @@ exports.addTextPost = (req, res) => {
       return saveNewPostDB(newPost);
     })
     .then((result) => {
-      logger.debug('Routes:content:submitTextPost -- ' +
-        'Post saved -> ' + newPost._id);
+      logger.verbose('[ContentController] addTextPost:getSubjectName -' +
+        ' Post saved for subject %s with postId %s',
+        result.creatorId, result._id);
       res.status(200).send();
     })
     .catch((err) => {
-      logger.error('Routes:content:submitTextPost --' + err);
+      logger.warn('[ContentController] addTextPost:getSubjectName - ' + err);
       res.status(500).send();
     });
 };
 
 exports.addComboPost = (req, res) => {
+  logger.info('[ContentController] Adding combopost for subject %s',
+    req.body.birthId);
   upload(req, res, (err) => {
     if (err) {
-      logger.debug('Routes:content:submitComboPost:multer --' + err);
+      logger.warn('[ContentController] addComboPost:upload - ' + err);
       res.status(500).send();
     } else {
       var postContent = req.body.postContent;
       const ext = '.txt';
-      var filename = req.file.file;
+      var filename = req.file.filename;
       var newPost = new Post({
         creatorId: req.body.birthId,
         timeCreated: moment().utc().valueOf(),
         contentType: 'IT',
         text: postContent,
-        imageId: filename,
+        imageId: filename + '',
         upVotes: 0,
         downVotes: 0,
+        comments: 0,
         isCensored: false,
         isGenerated: req.body.generate
       });
@@ -87,12 +94,14 @@ exports.addComboPost = (req, res) => {
           return saveNewPostDB(newPost);
         })
         .then((result) => {
-          logger.debug('Routes:content:submitComboPost -- ' +
-            'Post saved -> ' + newPost._id);
+          logger.verbose('[ContentController] addComboPost:upload:' +
+            'getSubjectName - Post saved for subject %s with postId %s',
+            result.creatorId, result._id);
           res.status(200).send();
         })
         .catch((error) => {
-          logger.error('Routes:content:submitComboPost:writeFile --' + err);
+          logger.warn('[ContentController] addComboPost:upload:' +
+            'getSubjectName - ' + err);
           res.status(500).send();
         });
     }
@@ -100,11 +109,10 @@ exports.addComboPost = (req, res) => {
 };
 
 exports.getNextPosts = (req, res) => {
+  logger.info('[ContentController] Fetching next posts');
   var noOfPosts = Number(req.query.noOfPosts);
   var birthId = req.query.birthId;
-  //converting to native date because moment's date doesn't work for some reason
   var lastDatetime = moment(Number(req.query.lastTimestamp)).utc().format();
-  logger.debug('--' + lastDatetime + '--');
   var result = [];
   var promiseList = [];
   Post.find({
@@ -121,17 +129,25 @@ exports.getNextPosts = (req, res) => {
       }
       Promise.all(promiseList)
         .then((results) => {
+          logger.verbose('[ContentController] getNextPosts:find:promise ' +
+            '- posts fetched');
           res.status(200).json(results);
         })
         .catch((error) => {
-          logger.error(error);
+          logger.warn('[ContentController] getNextPosts:find:promise - ' + err);
           res.status(500).send();
         });
+    })
+    .catch(err => {
+      logger.warn('[ContentController] getNextPosts:find - ' + err);
+      res.status(500).send();
     });
 };
 
 //get images in posts
 exports.getPostedImage = (req, res) => {
+  logger.info('[ContentController] getPostedImage ' +
+    '- Image %s requested', req.query.imageId);
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
   sharp('./posts/images/' + req.query.imageId)
@@ -142,12 +158,13 @@ exports.getPostedImage = (req, res) => {
     .withoutEnlargement(true)
     .toBuffer()
     .then((data) => {
+      logger.verbose('[ContentController] getPostedImage:sharp ' +
+        '- image fetched');
       res.set('Content-Type', 'image/jpg');
-      logger.debug(data.length);
       res.status(200).send(data);
     })
     .catch((err) => {
-      logger.error('routes:content:postedImage:sharp -- ' + err);
+      logger.warn('[ContentController] getPostedImage:sharp - ' + err);
       res.status(500).send({
         success: false
       });
@@ -155,16 +172,20 @@ exports.getPostedImage = (req, res) => {
 };
 
 exports.getImageMetadata = (req, res) => {
+  logger.info('[ContentController] getImageMetadata ' +
+    '- Metadata for image %s requested', req.query.imageId);
   sharp('./posts/images/' + req.query.imageId)
     .metadata()
     .then((metadata) => {
+      logger.verbose('[ContentController] getImageMetadata:sharp ' +
+        '- image metadata fetched');
       res.status(200).json({
         width: metadata.width,
         height: metadata.height
       });
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[ContentController] getImageMetadata:sharp - ' + err);
       res.status(400).send();
     });
 };
@@ -181,7 +202,7 @@ getSubjectName = birthId => new Promise((resolve, reject) => {
       }
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[ContentController] getSubjectName:findOne - ' + err);
       reject(err);
     });
 });
@@ -192,15 +213,14 @@ getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
 
   Vote.findOne({
       birthId: birthId,
-      _id: newPost._id
+      postId: newPost._id
     }).exec()
     .then((vote) => {
       newPost.opinion = (vote == null) ? 0 : vote.value;
-
-      console.log('nextPostsList[x].opinion ' + newPost);
       resolve(newPost);
     })
     .catch((err) => {
+      logger.warn('[ContentController] getPostVotes:findOne - ' + err);
       reject(err);
     });
 });
@@ -208,11 +228,9 @@ getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
 saveNewPostDB = newPost => new Promise((resolve, reject) => {
   newPost.save((err, post) => {
     if (err) {
-      logger.debug('Routes:content:saveNewPostDB:mongoose --' + err);
+      logger.warn('[ContentController] saveNewPostDB:save - ' + err);
       reject(err);
     } else {
-      logger.debug('Routes:content:saveNewPostDB -- ' +
-        'Post saved -> ' + post._id);
       resolve();
     }
   });
@@ -225,11 +243,9 @@ readFile = (path, root) => new Promise((resolve, reject) => {
     path = root + path;
     fs.readFile(path, 'utf8', (err, data) => {
       if (err) {
-        logger.debug('Routes:content:readFile:fs --' + err);
+        logger.warn('[ContentController] readFile:readFile - ' + err);
         reject(err);
       } else {
-        logger.debug('Routes:content:readFile:fs --' +
-          'file read from path ' + path);
         resolve(data);
       }
     });

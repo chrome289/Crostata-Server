@@ -13,6 +13,8 @@ const Subject = require('../models/subject');
 var config = require('config');
 
 exports.getPatriotIndex = (req, res) => {
+  logger.info('[SubjectController] getPatriotIndex' +
+    ' - Get PI for subject %s', req.query.birthId);
   Subject.findOne({
       birthId: req.query.birthId
     })
@@ -24,7 +26,7 @@ exports.getPatriotIndex = (req, res) => {
       });
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[SubjectController] getPatriotIndex:findOne - %s', err);
       res.status(422).json({
         birthId: req.query.birthId,
         patriotIndex: 0
@@ -33,6 +35,8 @@ exports.getPatriotIndex = (req, res) => {
 };
 
 exports.getRank = (req, res) => {
+  logger.info('[SubjectController] getRank' +
+    ' - Get rank for subject %s', req.query.birthId);
   getRank(req.query.birthId)
     .then((rank) => {
       res.status(200).json({
@@ -41,6 +45,7 @@ exports.getRank = (req, res) => {
       });
     })
     .catch((status) => {
+      logger.warn('[SubjectController] getRank:getRank - %s', status);
       res.status(status).json({
         birthId: 0,
         rank: 0
@@ -50,6 +55,7 @@ exports.getRank = (req, res) => {
 
 //get charts
 exports.charts = (req, res) => {
+  logger.info('[SubjectController] charts - Get PI charts');
   Subject.find({}, ['birthId', 'name', 'patriotIndex', '-_id'])
     .sort({
       'patriotIndex': -1,
@@ -62,38 +68,44 @@ exports.charts = (req, res) => {
       res.status(200).json(subjects);
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[SubjectController] charts:find - %s', err);
       res.status(500).json({});
     });
 };
 
 //get posts
 exports.getPost = (req, res) => {
+  logger.info('[SubjectController] getPost' +
+    ' - Get posts for subject %s', req.query.birthId);
   fetchPosts(req.query.lastTimestamp, req.query.birthId, req.query.size)
     .then((resolve) => {
       res.status(200).json(resolve);
     })
     .catch((reject) => {
-      logger.debug('routes:subject:getSubjectPostsId:find -- ' + reject);
+      logger.warn('[SubjectController] getPost:fetchPosts - %s', reject);
       res.status(500).send();
     });
 };
 
 //get comments
 exports.getComment = function(req, res) {
+  logger.info('[SubjectController] getComment' +
+    ' - Get comments for subject %s', req.query.birthId);
   fetchComments(
       req.query.lastTimestamp, req.query.birthId, req.query.noOfComments)
     .then((resolve) => {
       res.status(200).json(resolve);
     })
     .catch((reject) => {
-      logger.debug('routes:opinion:getCommentForUser:find -- ' + reject);
+      logger.warn('[SubjectController] getComment:fetchComments - %s', reject);
       res.status(422).send();
     });
 };
 
 //get profile images
 exports.getProfileImage = (req, res) => {
+  logger.info('[SubjectController] getProfileImage' +
+    ' - Get profile image for subject %s', req.query.birthId);
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
   sharp('./images/' + req.query.birthId)
@@ -104,11 +116,13 @@ exports.getProfileImage = (req, res) => {
     .withoutEnlargement(true)
     .toBuffer()
     .then((data) => {
+      logger.verbose('[SubjectController] getProfileImage:sharp' +
+        ' - Image %s sent', req.query.birthId);
       res.set('Content-Type', 'image/jpg');
       res.status(200).send(data);
     })
     .catch((reject) => {
-      logger.error('routes:subject:getProfileImage:sharp -- ' + reject);
+      logger.warn('[SubjectController] getProfileImage:sharp - %s', reject);
       res.status(500).send({
         success: false
       });
@@ -116,6 +130,8 @@ exports.getProfileImage = (req, res) => {
 };
 
 exports.getInfo = (req, res) => {
+  logger.info('[SubjectController] getInfo' +
+    ' - Get info for subject %s', req.query.birthId);
   const birthId = req.query.birthId;
   var subjectInfo;
   Subject.findOne({
@@ -125,22 +141,25 @@ exports.getInfo = (req, res) => {
     .exec()
     .then((subject) => {
       subjectInfo = subject;
+      //fetching posts
       return Post.find({
         creatorId: birthId
       }).exec();
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[SubjectController] getInfo:findOne - %s', err);
       res.status(400).json({});
     })
     .then((posts) => {
       subjectInfo.posts = posts.length;
+      //fetching comments
       return Comment.find({
         birthId: birthId
       }).exec();
     })
     .then((comments) => {
       subjectInfo.comments = comments.length;
+      //fetching rank
       return getRank(birthId);
     })
     .then((rank) => {
@@ -148,13 +167,15 @@ exports.getInfo = (req, res) => {
       res.status(200).json(subjectInfo);
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[SubjectController] getInfo:findOne:getRank - %s', err);
       res.status(500).json({});
     });
 };
 
 //get overview
 exports.overview = (req, res) => {
+  logger.info('[SubjectController] overview' +
+    ' - Get overview for subject %s', req.query.birthId);
   var resultPosts, resultComments;
   var lastTimestamp = req.query.lastTimestamp,
     birthId = req.query.birthId,
@@ -172,7 +193,8 @@ exports.overview = (req, res) => {
       });
     })
     .catch((reject) => {
-      logger.error(reject);
+      logger.warn('[SubjectController] overview:fetchComments:fetchPosts - %s',
+        reject);
       res.status(500).json({});
     });
 };
@@ -197,7 +219,8 @@ var getRank = (birthId) => new Promise((resolve, reject) => {
       }
     })
     .catch((err) => {
-      logger.error(err);
+      logger.warn('[SubjectController] getRank:find - %s',
+        err);
       reject(500);
     });
 });
@@ -253,6 +276,8 @@ var fetchComments = (lastTimestamp, birthId, size) =>
         resolve(mapPostsToComments(postsResult, commentsResult));
       })
       .catch((err) => {
+        logger.warn('[SubjectController] fetchComments:find:find - %s',
+          err);
         reject(err);
       });
   });
@@ -274,6 +299,8 @@ var fetchPosts = (lastTimestamp, birthId, size) =>
         resolve(posts);
       })
       .catch((err) => {
+        logger.warn('[SubjectController] fetchPosts:find - %s',
+          err);
         reject(err);
       });
   });

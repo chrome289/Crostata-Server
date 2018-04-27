@@ -23,6 +23,7 @@
     "helmet": "^3.11.0",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.1.1",
+    "logform": "^1.6.0",
     "moment": "^2.20.1",
     "mongodb": "^3.0.2",
     "mongoose": "^5.0.6",
@@ -36,7 +37,7 @@
     "shortid": "^2.2.8",
     "time": "^0.12.0",
     "validator": "^9.4.1",
-    "winston": "^2.4.0"
+    "winston": "^3.0.0-rc5"
   },
   "devDependencies": {
     "chai": "^4.1.2",
