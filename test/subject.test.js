@@ -1,6 +1,3 @@
-//force jshint to uee es6
-/*jshint expr: true*/
-
 process.env.NODE_ENV = 'test';
 
 var mongoose = require('mongoose');
@@ -10,6 +7,7 @@ var chaiHttp = require('chai-http');
 var logger = require('../utils/logger');
 
 var Subject = require('../models/subject');
+var authController = require('../controllers/authController');
 
 var app = require('../app');
 
@@ -44,13 +42,13 @@ describe('subject tests', () => {
   describe('adding subject', () => {
     it('addition & duplicate birthId', (done) => {
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(aSubject)
         .end((err, res) => {
           res.should.have.status(200);
 
           chai.request(app)
-            .post('/api/auth/signup')
+            .post('/api/v1/auth/signup')
             .send(aSubject)
             .end((err, res) => {
               res.should.have.status(400);
@@ -65,7 +63,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.name = 'L';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -90,7 +88,7 @@ describe('subject tests', () => {
         '\'Lorem ipsum dolor sit amet..\',' +
         ' comes from a line in section 1.10.32.';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -104,7 +102,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.password = '1234567';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -118,7 +116,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.profession = 'REPORTER';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -129,7 +127,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.profession = 'peasant';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -143,7 +141,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.gender = 2;
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -154,7 +152,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.gender = -1;
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -168,7 +166,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.picture = '8454845150.jpg';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -182,7 +180,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.patriotIndex = -1001;
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -193,7 +191,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.patriotIndex = 1001;
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -204,7 +202,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.patriotIndex = 'a';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -218,7 +216,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.alive = 'trued';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -232,7 +230,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.informer = 'trued';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -246,7 +244,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.dob = 'trued';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);
@@ -258,7 +256,7 @@ describe('subject tests', () => {
       var tempSubject = Object.assign({}, aSubject);
       tempSubject.dob = '04 Dec 1995 00:12:00 GMT';
       chai.request(app)
-        .post('/api/auth/signup')
+        .post('/api/v1/auth/signup')
         .send(tempSubject)
         .end((err, res) => {
           res.should.have.status(422);

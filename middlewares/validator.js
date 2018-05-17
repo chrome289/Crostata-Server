@@ -164,7 +164,7 @@ router.get('/content/nextPostsList', [
 router.get('/content/postedImage', [
   check('imageId').exists(),
   check('dimen').isInt({
-    min: 48,
+    min: 8,
     max: 2160
   }),
   check('quality').isInt({
@@ -267,7 +267,10 @@ router.post('/opinion/comment', [
     max: 99999999
   }),
   check('postId').exists().isAlphanumeric(),
-  check('text').exists(),
+  check('text').exists().isLength({
+    min:1,
+    max:20000
+  }),
   check('generate').isBoolean()
 ], (req, res, next) => {
   const errors = validationResult(req);
@@ -326,7 +329,7 @@ router.get('/subject/profileImage', [
     max: 99999999
   }),
   check('dimen').isInt({
-    min: 48,
+    min: 8,
     max: 1024
   }),
   check('quality').isInt({

@@ -1,36 +1,38 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var jwt = require('jsonwebtoken');
-var morgan = require('morgan');
-var compression = require('compression');
-var helmet = require('helmet');
-var slow = require('connect-slow');
+const express = require('express');
+const path = require('path');
+const favicon = require('serve-favicon');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const morgan = require('morgan');
+const compression = require('compression');
+const helmet = require('helmet');
+const slow = require('connect-slow');
 
 //routes
-var index = require('./routes/index');
-var subject = require('./routes/subject');
-var auth = require('./routes/auth');
-var bot = require('./routes/bot');
-var content = require('./routes/content');
-var opinion = require('./routes/opinion');
+const index = require('./routes/index');
+const subject = require('./routes/subject');
+const auth = require('./routes/auth');
+const bot = require('./routes/bot');
+const content = require('./routes/content');
+const opinion = require('./routes/opinion');
+const search = require('./routes/search');
+const report = require('./routes/report');
 
 
 //middlewares
-var tokenMiddleware = require('./middlewares/token');
-var validatorMiddleware = require('./middlewares/validator');
+const tokenMiddleware = require('./middlewares/token');
+const validatorMiddleware = require('./middlewares/validator');
 
 //winston logger
-var logger = require('./utils/logger');
+const logger = require('./utils/logger');
 
 //config
-var config = require('config');
+const config = require('config');
 
 //TODO remove delay later
-var app = express();
+const app = express();
 /*.use(slow({
   delay: 3000
 }));*/
@@ -75,17 +77,19 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //use tokenMiddleware only when auth is done already
-app.use('/api', validatorMiddleware.router);
-app.use('/api', tokenMiddleware.router);
+app.use('/api/v1', validatorMiddleware.router);
+app.use('/api/v1', tokenMiddleware.router);
 
 //setting up routes hierachy
 app.use('/', index);
 app.use('/bot', bot);
 
-app.use('/api/subject', subject);
-app.use('/api/auth', auth.router);
-app.use('/api/content', content.router);
-app.use('/api/opinion', opinion.router);
+app.use('/api/v1/subject', subject);
+app.use('/api/v1/auth', auth.router);
+app.use('/api/v1/content', content.router);
+app.use('/api/v1/opinion', opinion.router);
+app.use('/api/v1/search', search.router);
+app.use('/api/v1/report', report.router);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

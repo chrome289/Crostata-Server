@@ -6,6 +6,7 @@ const PostSchema = new Schema({
   creatorName:String,
   timeCreated: Date,
   contentType: String,
+  title: String,
   text: String,
   imageId: String,
   upVotes: Number,

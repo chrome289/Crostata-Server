@@ -136,7 +136,7 @@ exports.getInfo = (req, res) => {
   var subjectInfo;
   Subject.findOne({
       birthId: birthId
-    }, ['-_id', '-__v'])
+    }, ['-_id', '-__v', '-password'])
     .lean()
     .exec()
     .then((subject) => {
@@ -262,7 +262,7 @@ var fetchComments = (lastTimestamp, birthId, size) =>
               '$in': postList
             }
           }, ['_id', 'creatorName', 'timeCreated', 'contentType',
-            'text', 'imageId'
+            'title', 'text', 'imageId'
           ])
           .lean()
           .exec();
@@ -284,8 +284,7 @@ var fetchComments = (lastTimestamp, birthId, size) =>
 
 var fetchPosts = (lastTimestamp, birthId, size) =>
   new Promise((resolve, reject) => {
-    var lastDatetime = moment.unix(lastTimestamp)
-      .toDate();
+    var lastDatetime = moment(Number(lastTimestamp)).utc().format();
     Post.find({
         creatorId: birthId,
         timeCreated: {

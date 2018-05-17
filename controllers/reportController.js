@@ -59,6 +59,40 @@ exports.addReport = (req, res) => {
     });
 };
 
+exports.getReportsMade = (req, res) => {
+  const birthId = req.query.birthId;
+  Report.find({
+      reporterId: birthId
+    })
+    .exec()
+    .then((reports) => {
+      logger.verbose('[ReportController] getReportsMade:find ' +
+        '- reports made by %s fetched successfully', birthId);
+      res.status(200).send(reports);
+    })
+    .catch((err) => {
+      logger.warn('[ReportController] getReportsMade:find - ' + err);
+      res.status(500).send();
+    });
+};
+
+exports.getReportsAgainst = (req, res) => {
+  const birthId = req.query.birthId;
+  Report.find({
+      creatorId: birthId
+    })
+    .exec()
+    .then((reports) => {
+      logger.verbose('[ReportController] getReportsAgainst:find ' +
+        '- reports against %s fetched successfully', birthId);
+      res.status(200).send(reports);
+    })
+    .catch((err) => {
+      logger.warn('[ReportController] getReportsAgainst:find - ' + err);
+      res.status(500).send();
+    });
+};
+
 var updatePatriotIndex = report => new Promise((resolve, err) => {
   if (report.isReviewed && report.isAccepted) {
     //adding patriot points for reporter

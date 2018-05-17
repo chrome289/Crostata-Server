@@ -107,12 +107,12 @@ subjectExists = (newSubject) => new Promise((exists) => {
     .then((subject) => {
       if (subject != null) {
         logger.info('[AuthController] signup:subjectExists - Subject %s exists',
-          req.body.birthId);
+          newSubject.birthId);
         exists(true);
       } else {
         //subjects doesn't exist. no error in callback
         logger.verbose('[AuthController] signup:subjectExists' +
-          ' - Subject %s doesn\'t exists. Saving.', req.body.birthId);
+          ' - Subject %s doesn\'t exists. Saving.', newSubject.birthId);
         exists(false);
       }
     })
@@ -146,7 +146,7 @@ saveSubjectDB = (newSubject) => new Promise((resolve) => {
   newSubject.save()
     .then((subject) => {
       logger.verbose('[AuthController] signup:subjectExists:saveSubjectDB ' +
-        '- Subject %s saved.', req.body.birthId);
+        '- Subject %s saved.', newSubject.birthId);
       resolve(true);
     })
     .catch((err) => {

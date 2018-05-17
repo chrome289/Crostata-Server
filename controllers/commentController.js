@@ -22,14 +22,23 @@ exports.addComment = function(req, res) {
     isCensored: false,
     isGenerated: req.body.generate
   });
-  newComment.save()
+  Post.findOneAndUpdate({
+      _id: req.body.postId
+    }, {
+      $inc: {
+        comments: 1
+      }
+    })
+    .then((post) => {
+      return newComment.save();
+    })
     .then((comment) => {
       logger.verbose('[CommentController] addComment - Comment added');
-      res.status(200).send();
+      res.status(200).send(comment);
     })
     .catch((err) => {
       logger.warn('[CommentController] addComment - %s', err);
-      res.status(500).send();
+      res.status(500).send([]);
     });
 };
 
@@ -69,22 +78,13 @@ exports.getComments = function(req, res) {
     .sort('-timeCreated')
     .limit(Number(req.query.noOfComments))
     .then((comments) => {
-      var resultPromises = [];
-      logger.verbose('[CommentController] getComments:find -' +
-        ' get creator details for comments');
-      for (var x = 0; x < comments.length; x++) {
-        resultPromises.push(getCommentDetails(comments[x]));
+      logger.verbose('[CommentController] getComments:find:promise -' +
+        ' comments fetching complete');
+      if (comments.length === 0) {
+        commentFailure(res, 422);
+      } else {
+        commentSuccess(res, comments);
       }
-      Promise.all(resultPromises)
-        .then((comments) => {
-          logger.verbose('[CommentController] getComments:find:promise -' +
-            ' comments fetching complete');
-          commentSuccess(res, comments);
-        })
-        .catch((err) => {
-          logger.warn('[CommentController] getComments:find:promise -' + err);
-          commentFailure(res, 500);
-        });
     })
     .catch((err) => {
       logger.warn('[CommentController] getComments:find' + err);

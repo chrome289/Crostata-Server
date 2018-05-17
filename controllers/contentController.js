@@ -34,12 +34,14 @@ exports.addTextPost = (req, res) => {
   logger.info('[ContentController] Adding textpost for subject %s',
     req.body.birthId);
   var postContent = req.body.postContent;
+  var title = req.body.title;
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
   var newPost = new Post({
     creatorId: req.body.birthId,
     timeCreated: moment().utc().valueOf(),
     contentType: 'TO',
+    title: title,
     text: postContent,
     imageId: '',
     upVotes: 0,
@@ -74,12 +76,14 @@ exports.addComboPost = (req, res) => {
       res.status(500).send();
     } else {
       var postContent = req.body.postContent;
+      var title = req.body.title;
       const ext = '.txt';
       var filename = req.file.filename;
       var newPost = new Post({
         creatorId: req.body.birthId,
         timeCreated: moment().utc().valueOf(),
         contentType: 'IT',
+        title: title,
         text: postContent,
         imageId: filename + '',
         upVotes: 0,

@@ -21,38 +21,17 @@ exports.addVote = function(req, res) {
     postId: req.body.postId,
     value: req.body.value
   });
-  Vote.findOneAndUpdate({
+  Vote.findOneAndRemove({
       birthId: newVote.birthId,
       postId: newVote.postId
-    }, {
-      value: newVote.value
     })
     .then((vote) => {
-      if (vote != null) {
-        updateVoteTotals(newVote.postId)
-          .then((voteTotal) => {
-            logger.verbose('[VoteController] ' +
-              'addVote:findOneAndUpdate:updateVoteTotals - vote updated');
-            voteSuccess(res, voteTotal);
-          })
-          .catch((err) => {
-            logger.warn('[VoteController] ' +
-              'addVote:findOneAndUpdate:updateVoteTotals - %s', err);
-            voteFailure(res, 500);
-          });
-      } else {
-        saveNewVote(newVote)
-          .then((voteTotal) => {
-            logger.verbose('[VoteController] ' +
-              'addVote:findOneAndUpdate:saveNewVote - vote saved');
-            voteSuccess(res, voteTotal);
-          })
-          .catch((err) => {
-            logger.warn('[VoteController] ' +
-              'addVote:findOneAndUpdate:saveNewVote - %s', err);
-            voteFailure(res, 500);
-          });
-      }
+      return saveNewVote(newVote);
+    })
+    .then((voteTotal) => {
+      logger.verbose('[VoteController] ' +
+        'addVote:findOneAndRemove:saveNewVote - vote saved');
+      voteSuccess(res, voteTotal);
     })
     .catch((err) => {
       logger.warn('[VoteController] addVote:findOneAndUpdate' +
@@ -66,34 +45,33 @@ exports.deleteVote = function(req, res) {
     '- Deleting vote for post %s and subject %s',
     req.query.postId, req.query.birthId);
   Vote.findOneAndRemove({
-    birthId: req.query.birthId,
-    postId: req.query.postId
-  }).then((vote) => {
-    updateVoteTotals(req.query.postId).then((voteTotal) => {
+      birthId: req.query.birthId,
+      postId: req.query.postId
+    })
+    .then((vote) => {
+      return updateVoteTotals(req.query.postId);
+    })
+    .then((voteTotal) => {
       logger.verbose('[VoteController] ' +
         'deleteVote:findOneAndRemove:updateVoteTotals' +
         ' - updated vote total for postId %s and subject %s',
         req.query.postId, req.query.birthId);
       voteSuccess(res, voteTotal);
+    })
+    .catch((err) => {
+      logger.warn('[VoteController] deleteVote:findOneAndRemove' +
+        ' - %s', err);
+      voteFailure(res, 500);
     });
-  }, (err) => {
-    logger.warn('[VoteController] deleteVote:findOneAndRemove' +
-      ' - %s', err);
-    voteFailure(res, 500);
-  });
 };
 
 exports.getVoteTotal = function(req, res) {
   logger.info('[VoteController] getVoteTotal ' +
     '- Get vote total for post %s', req.query.postId);
   Vote.find({
-    postId: req.query.postId
-  }).exec((err, votes) => {
-    if (err) {
-      logger.warn('[VoteController] getVoteTotal:find' +
-        ' - %s', err);
-      voteFailure(res, 500);
-    } else {
+      postId: req.query.postId
+    })
+    .then((votes) => {
       var total = 0;
       for (var x = 0; x < votes.length; x++) {
         total += votes[x].value;
@@ -101,62 +79,62 @@ exports.getVoteTotal = function(req, res) {
       logger.verbose('[VoteController] getVoteTotal:find' +
         ' - total votes for post %s are %d', req.query.postId, total);
       voteSuccess(res, total);
-    }
-  });
+    })
+    .catch((err) => {
+      logger.warn('[VoteController] getVoteTotal:find' +
+        ' - %s', err);
+      voteFailure(res, 500);
+    });
 };
 
 exports.getVotePerPost = function(req, res) {
   logger.info('[VoteController] getVoteTotal ' +
-  '- Get vote total for post %s and subject %s',
-  req.query.postId, req.query.birthId);
+    '- Get vote total for post %s and subject %s',
+    req.query.postId, req.query.birthId);
   Vote.find({
-    birthId: req.query.birthId,
-    postId: req.query.postId
-  }).then((vote) => {
-    if (vote.length > 0) {
-      logger.verbose('[VoteController] getVotePerPost:find' +
-        ' - subject %s voted %d for post %s',
-        req.query.birthId, vote.value, req.query.postId);
-      voteSuccess(res, vote.value);
-    } else {
-      logger.verbose('[VoteController] getVotePerPost:find' +
-        ' - no vote found');
-      voteFailure(res, 400);
-    }
-  }, (err) => {
-    logger.warn('[VoteController] getVotePerPost:find' +
-      ' - %s', err);
-    voteFailure(res, 500);
-  });
+      birthId: req.query.birthId,
+      postId: req.query.postId
+    })
+    .then((vote) => {
+      if (vote.length > 0) {
+        logger.verbose('[VoteController] getVotePerPost:find' +
+          ' - subject %s voted %d for post %s',
+          req.query.birthId, vote.value, req.query.postId);
+        voteSuccess(res, vote.value);
+      } else {
+        logger.verbose('[VoteController] getVotePerPost:find' +
+          ' - no vote found');
+        voteFailure(res, 400);
+      }
+    })
+    .catch((err) => {
+      logger.warn('[VoteController] getVotePerPost:find' +
+        ' - %s', err);
+      voteFailure(res, 500);
+    });
 };
 
 var saveNewVote = newVote => new Promise((resolve, reject) => {
   newVote.save()
     .then((vote) => {
-      updateVoteTotals(newVote.postId)
-        .then((voteTotal) => {
-          resolve(voteTotal);
-        })
-        .catch((err) => {
-          logger.warn('[VoteController] saveNewVote:save:updateVoteTotals' +
-            ' - %s', err);
-          reject(err);
-        });
+      return updateVoteTotals(newVote.postId);
+    })
+    .then((voteTotal) => {
+      resolve(voteTotal);
     })
     .catch((err) => {
-      logger.warn('[VoteController] saveNewVote:save' +
-        ' - %s', err);
+      logger.warn('[VoteController] saveNewVote:save - %s', err);
       reject(err);
     });
 });
 
 var updateVoteTotals = postId => new Promise((resolve, reject) => {
+  var totalUpVotes = 0;
+  var totalDownVotes = 0;
   Vote.find({
       postId: postId
     })
     .then((votes) => {
-      var totalUpVotes = 0;
-      var totalDownVotes = 0;
       for (var x = 0; x < votes.length; x++) {
         if (votes[x].value === 1) {
           totalUpVotes++;
@@ -164,20 +142,15 @@ var updateVoteTotals = postId => new Promise((resolve, reject) => {
           totalDownVotes++;
         }
       }
-      Post.findOneAndUpdate({
-          _id: postId
-        }, {
-          upVotes: totalUpVotes,
-          downVotes: totalDownVotes
-        })
-        .then((post) => {
-          resolve(totalUpVotes - totalDownVotes);
-        })
-        .catch((err) => {
-          logger.warn('[VoteController] updateVoteTotal:find:findOneAndUpdate' +
-            ' - %s', err);
-          reject(err);
-        });
+      return Post.findOneAndUpdate({
+        _id: postId
+      }, {
+        upVotes: totalUpVotes,
+        downVotes: totalDownVotes
+      });
+    })
+    .then((post) => {
+      resolve(totalUpVotes - totalDownVotes);
     })
     .catch((err) => {
       logger.warn('[VoteController] updateVoteTotals:find - %s',

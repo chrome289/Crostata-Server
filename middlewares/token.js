@@ -23,7 +23,7 @@ router.use('/', (req, res, next) => {
           logger.warn('[Token] Token invalid');
           res.status(400).send();
         } else {
-          logger.info('[Token] Token valid');
+          //logger.debug('[Token] Token valid');
           res.locals.token = token;
           next();
         }
