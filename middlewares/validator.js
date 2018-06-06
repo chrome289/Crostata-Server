@@ -137,11 +137,7 @@ router.post('/content/comboPost', [
   }
 });
 
-router.get('/content/nextPostsList', [
-  check('noOfPosts').isInt({
-    min: 1,
-    max: 20
-  }),
+router.get('/content/nextPosts', [
   check('lastTimestamp').isFloat(),
   check('birthId').isInt({
     min: 0,
@@ -153,7 +149,7 @@ router.get('/content/nextPostsList', [
     next();
   } else {
     //validation failed.
-    logger.warn('[Validator] [GET]content:nextPostsList - ' +
+    logger.warn('[Validator] [GET]content:nextPosts - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -304,10 +300,6 @@ router.delete('/opinion/comment', [
 
 router.get('/opinion/comments', [
   check('postId').exists(),
-  check('noOfComments').isInt({
-    min: 1,
-    max: 20
-  }),
   check('lastTimestamp').isFloat()
 ], (req, res, next) => {
   const errors = validationResult(req);

@@ -10,6 +10,8 @@ const sharp = require('sharp');
 var shortid = require('shortid');
 var moment = require('moment');
 
+const cacheManager = require('../middlewares/cacheManager.js');
+
 var diskStorage = multer.diskStorage({
   destination: function(req, file, cb) {
     return cb(null, './posts/images/');
@@ -34,14 +36,12 @@ exports.addTextPost = (req, res) => {
   logger.info('[ContentController] Adding textpost for subject %s',
     req.body.birthId);
   var postContent = req.body.postContent;
-  var title = req.body.title;
   const ext = '.txt';
   var filename = shortid.generate() + 'UTC' + new Date().getTime();
   var newPost = new Post({
     creatorId: req.body.birthId,
     timeCreated: moment().utc().valueOf(),
     contentType: 'TO',
-    title: title,
     text: postContent,
     imageId: '',
     upVotes: 0,
@@ -76,14 +76,12 @@ exports.addComboPost = (req, res) => {
       res.status(500).send();
     } else {
       var postContent = req.body.postContent;
-      var title = req.body.title;
       const ext = '.txt';
       var filename = req.file.filename;
       var newPost = new Post({
         creatorId: req.body.birthId,
         timeCreated: moment().utc().valueOf(),
         contentType: 'IT',
-        title: title,
         text: postContent,
         imageId: filename + '',
         upVotes: 0,
@@ -114,35 +112,42 @@ exports.addComboPost = (req, res) => {
 
 exports.getNextPosts = (req, res) => {
   logger.info('[ContentController] Fetching next posts');
-  var noOfPosts = Number(req.query.noOfPosts);
-  var birthId = req.query.birthId;
-  var lastDatetime = moment(Number(req.query.lastTimestamp)).utc().format();
+
   var result = [];
   var promiseList = [];
+
+  var birthId = req.query.birthId;
+  var skipCount = req.query.skipCount;
+  var lastDatetime = moment(Number(req.query.lastTimestamp)).utc().format();
+
   Post.find({
       timeCreated: {
         '$lt': lastDatetime
       }
     })
     .sort('-timeCreated')
-    .limit(noOfPosts)
+    .skip(skipCount)
+    .limit(100)
     .exec()
     .then((nextPostsList) => {
       for (var x = 0; x < nextPostsList.length; x++) {
         promiseList.push(getPostVotes(nextPostsList[x], birthId));
       }
-      Promise.all(promiseList)
-        .then((results) => {
-          logger.verbose('[ContentController] getNextPosts:find:promise ' +
-            '- posts fetched');
-          res.status(200).json(results);
-        })
-        .catch((error) => {
-          logger.warn('[ContentController] getNextPosts:find:promise - ' + err);
-          res.status(500).send();
-        });
+      return Promise.all(promiseList);
     })
-    .catch(err => {
+    .then((posts) => {
+      result = {
+        requestId: req.query.requestId,
+        posts: posts.slice(0, 10)
+      };
+      return cacheManager.saveInCache(req.query.requestId, skipCount, posts);
+    })
+    .then((resolve) => {
+      logger.verbose('[ContentController] getNextPosts:find:promise ' +
+        '- posts fetched');
+      res.status(200).json(result);
+    })
+    .catch((error) => {
       logger.warn('[ContentController] getNextPosts:find - ' + err);
       res.status(500).send();
     });
@@ -197,7 +202,8 @@ exports.getImageMetadata = (req, res) => {
 getSubjectName = birthId => new Promise((resolve, reject) => {
   Subject.findOne({
       birthId: birthId
-    }).exec()
+    })
+    .exec()
     .then((subject) => {
       if (subject == null) {
         reject(422);
@@ -230,14 +236,15 @@ getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
 });
 
 saveNewPostDB = newPost => new Promise((resolve, reject) => {
-  newPost.save((err, post) => {
-    if (err) {
+  //logger.verbose('[ContentController] saveNewPostDB - ' + newPost);
+  newPost.save()
+    .then((post) => {
+      resolve(post);
+    })
+    .catch((err) => {
       logger.warn('[ContentController] saveNewPostDB:save - ' + err);
       reject(err);
-    } else {
-      resolve();
-    }
-  });
+    });
 });
 
 readFile = (path, root) => new Promise((resolve, reject) => {

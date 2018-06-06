@@ -10,6 +10,7 @@ const Comment = require('../models/comment');
 const Subject = require('../models/subject');
 
 var config = require('config');
+const cacheManager = require('../middlewares/cacheManager.js');
 
 exports.addComment = function(req, res) {
   logger.info('[CommentController] Adding a comment ' +
@@ -30,6 +31,12 @@ exports.addComment = function(req, res) {
       }
     })
     .then((post) => {
+      return Subject.findOne({
+        birthId: newComment.birthId
+      });
+    })
+    .then((subject) => {
+      newComment.name = subject.name;
       return newComment.save();
     })
     .then((comment) => {
@@ -68,7 +75,11 @@ exports.deleteComment = function(req, res) {
 exports.getComments = function(req, res) {
   logger.info('[CommentController] Fetching comments for' +
     ' post %s', req.query.postId);
+  var result = [];
+
   var lastDatetime = moment(Number(req.query.lastTimestamp)).utc().format();
+  var skipCount = req.query.skipCount;
+
   Comment.find({
       postId: req.query.postId,
       timeCreated: {
@@ -76,14 +87,22 @@ exports.getComments = function(req, res) {
       }
     })
     .sort('-timeCreated')
-    .limit(Number(req.query.noOfComments))
+    .skip(skipCount)
+    .limit(100)
+    .then((comments) => {
+      result = {
+        requestId: req.query.requestId,
+        comments: comments.slice(0, 10)
+      };
+      return cacheManager.saveInCache(req.query.requestId, skipCount, comments);
+    })
     .then((comments) => {
       logger.verbose('[CommentController] getComments:find:promise -' +
         ' comments fetching complete');
       if (comments.length === 0) {
         commentFailure(res, 422);
       } else {
-        commentSuccess(res, comments);
+        commentSuccess(res, result);
       }
     })
     .catch((err) => {

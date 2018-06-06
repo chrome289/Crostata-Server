@@ -65,6 +65,36 @@ router.get('/generate', (req, res) => {
     });
 });
 
+router.get('/setProfileImages', (req, res) => {
+  Subject.find({})
+    .then((subjects) => {
+      for (var x = 0; x < subjects.length; x++) {
+        const id = subjects[x].birthId;
+        const aNumber = chance.natural({
+          min: 1,
+          max: 83
+        });
+        fs.readFile('./images/image (' + aNumber + ').jpg', (err2, data) => {
+          if (err2) {
+            logger.error(err2);
+          } else {
+            fs.writeFile('./images/' + id, data, (err3) => {
+              if (err3) {
+                logger.error(err3);
+              } else {
+                logger.debug('done');
+                //res.send('done');
+              }
+            });
+          }
+        });
+      }
+    })
+    .catch((err) => {
+      logger.error(err);
+    });
+});
+
 //probabilty for professions
 var getProfessionID = randomNumber => {
   if (randomNumber % 5 === 0) {

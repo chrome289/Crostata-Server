@@ -9,8 +9,11 @@ var moment = require('moment');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
 const Subject = require('../models/subject');
+const Vote = require('../models/vote');
 
 var config = require('config');
+
+const cacheManager = require('../middlewares/cacheManager.js');
 
 exports.getPatriotIndex = (req, res) => {
   logger.info('[SubjectController] getPatriotIndex' +
@@ -53,31 +56,12 @@ exports.getRank = (req, res) => {
     });
 };
 
-//get charts
-exports.charts = (req, res) => {
-  logger.info('[SubjectController] charts - Get PI charts');
-  Subject.find({}, ['birthId', 'name', 'patriotIndex', '-_id'])
-    .sort({
-      'patriotIndex': -1,
-      'name': 1
-    })
-    .lean()
-    .limit(100)
-    .exec()
-    .then((subjects) => {
-      res.status(200).json(subjects);
-    })
-    .catch((err) => {
-      logger.warn('[SubjectController] charts:find - %s', err);
-      res.status(500).json({});
-    });
-};
-
 //get posts
 exports.getPost = (req, res) => {
   logger.info('[SubjectController] getPost' +
     ' - Get posts for subject %s', req.query.birthId);
-  fetchPosts(req.query.lastTimestamp, req.query.birthId, req.query.size)
+  fetchPosts(req.query.requestId, req.query.lastTimestamp, req.query.skipCount,
+      req.query.creatorId, req.query.birthId)
     .then((resolve) => {
       res.status(200).json(resolve);
     })
@@ -164,6 +148,8 @@ exports.getInfo = (req, res) => {
     })
     .then((rank) => {
       subjectInfo.rank = rank;
+      logger.verbose('[SubjectController] getInfo:findOne:getRank - name is %s',
+        subjectInfo.name);
       res.status(200).json(subjectInfo);
     })
     .catch((err) => {
@@ -262,7 +248,7 @@ var fetchComments = (lastTimestamp, birthId, size) =>
               '$in': postList
             }
           }, ['_id', 'creatorName', 'timeCreated', 'contentType',
-            'title', 'text', 'imageId'
+            'text', 'imageId'
           ])
           .lean()
           .exec();
@@ -282,20 +268,39 @@ var fetchComments = (lastTimestamp, birthId, size) =>
       });
   });
 
-var fetchPosts = (lastTimestamp, birthId, size) =>
+var fetchPosts = (requestId, lastTimestamp, skipCount, creatorId, birthId) =>
   new Promise((resolve, reject) => {
+    var promiseList = [];
+    var result = [];
+
     var lastDatetime = moment(Number(lastTimestamp)).utc().format();
+
     Post.find({
-        creatorId: birthId,
+        creatorId: creatorId,
         timeCreated: {
           '$lt': lastDatetime
         }
       })
       .sort('-timeCreated')
-      .limit(Number(size))
-      .exec()
+      .skip(skipCount)
+      .limit(100)
+      .then((nextPostsList) => {
+        for (var x = 0; x < nextPostsList.length; x++) {
+          promiseList.push(getPostVotes(nextPostsList[x], birthId));
+        }
+        return Promise.all(promiseList);
+      })
       .then((posts) => {
-        resolve(posts);
+        result = {
+          requestId: requestId,
+          posts: posts.slice(0, 10)
+        };
+        return cacheManager.saveInCache(requestId, skipCount, posts);
+      })
+      .then((posts) => {
+        logger.verbose('[SubjectController] fetchPosts:find:promise ' +
+          '- posts fetched');
+        resolve(result);
       })
       .catch((err) => {
         logger.warn('[SubjectController] fetchPosts:find - %s',
@@ -303,3 +308,21 @@ var fetchPosts = (lastTimestamp, birthId, size) =>
         reject(err);
       });
   });
+
+var getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
+  var newPost = post.toObject();
+  newPost.votes = newPost.upVotes - newPost.downVotes;
+
+  Vote.findOne({
+      birthId: birthId,
+      postId: newPost._id
+    }).exec()
+    .then((vote) => {
+      newPost.opinion = (vote == null) ? 0 : vote.value;
+      resolve(newPost);
+    })
+    .catch((err) => {
+      logger.warn('[ContentController] getPostVotes:findOne - ' + err);
+      reject(err);
+    });
+});

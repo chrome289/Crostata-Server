@@ -24,6 +24,7 @@ const report = require('./routes/report');
 //middlewares
 const tokenMiddleware = require('./middlewares/token');
 const validatorMiddleware = require('./middlewares/validator');
+const cacheManager = require('./middlewares/cacheManager');
 
 //winston logger
 const logger = require('./utils/logger');
@@ -79,6 +80,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 //use tokenMiddleware only when auth is done already
 app.use('/api/v1', validatorMiddleware.router);
 app.use('/api/v1', tokenMiddleware.router);
+app.use('/api/v1', cacheManager.router);
+
 
 //setting up routes hierachy
 app.use('/', index);

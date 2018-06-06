@@ -15,6 +15,7 @@ exports.addReport = (req, res) => {
     ' - Subject %s adding report against %s',
     req.body.reporterId, req.body.creatorId);
   var newReport = new Report();
+  newReport.timeCreated = moment().utc().valueOf();
   newReport.contentId = req.body.contentId;
   newReport.contentType = req.body.contentType;
   newReport.creatorId = req.body.creatorId;
@@ -30,10 +31,17 @@ exports.addReport = (req, res) => {
     });
   }
 
-  Report.findOne({
-      contentId: newReport.contentId,
-      reporterId: newReport.reporterId
-    }).exec()
+  Subject.findOne({
+      birthId: req.body.creatorId
+    })
+    .exec()
+    .then((subject) => {
+      newReport.creatorName = subject.name;
+      return Report.findOne({
+        contentId: newReport.contentId,
+        reporterId: newReport.reporterId
+      });
+    })
     .then((report) => {
       if (report == null) {
         return newReport.save();

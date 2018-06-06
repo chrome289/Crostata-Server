@@ -7,8 +7,6 @@ router.get('/patriotIndex', subjectController.getPatriotIndex);
 
 router.get('/rank', subjectController.getRank);
 
-router.get('/charts', subjectController.charts);
-
 router.get('/profileImage', subjectController.getProfileImage);
 
 router.get('/posts', subjectController.getPost);

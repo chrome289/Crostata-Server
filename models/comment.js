@@ -4,6 +4,7 @@ var Schema = mongoose.Schema;
 const CommentSchema = new Schema({
   postId: String,
   birthId: String,
+  name: String,
   text: String,
   timeCreated: Date,
   isCensored: Boolean,
