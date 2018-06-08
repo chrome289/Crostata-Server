@@ -52,7 +52,7 @@ var getFromCache = (requestId, index) => new Promise((resolve, reject) => {
       if (data.length < ((index + 10) - cacheData.skipCount)) {
         reject(index);
       } else {
-        resolve(data.slice(index, index + 10));
+        resolve({list:data.slice(index, index + 10)});
       }
     }
   });

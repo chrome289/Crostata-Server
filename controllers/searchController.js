@@ -26,7 +26,7 @@ exports.search = (req, res) => {
     .then((subjects) => {
       result = {
         requestId: req.query.requestId,
-        searchResults: subjects.slice(0, 10)
+        list: subjects.slice(0, 10)
       };
       return cacheManager.saveInCache(req.query.requestId, skipCount, subjects);
     })

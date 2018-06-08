@@ -3,16 +3,16 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-const voteController = require('../controllers/voteController');
+const likeController = require('../controllers/likeController');
 const commentController = require('../controllers/commentController');
 
-router.post('/vote', voteController.addVote);
+router.post('/like', likeController.addLike);
 
-router.delete('/vote', voteController.deleteVote);
+router.delete('/like', likeController.deleteLike);
 
-router.get('/voteTotal', voteController.getVoteTotal);
+router.get('/likeTotal', likeController.getLikeTotal);
 
-router.get('/votePerPost', voteController.getVotePerPost);
+router.get('/likePerPost', likeController.getLikePerPost);
 
 router.post('/comment', commentController.addComment);
 

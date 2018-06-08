@@ -9,11 +9,11 @@ var moment = require('moment');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
 const Subject = require('../models/subject');
-const Vote = require('../models/vote');
 
 var config = require('config');
 
 const cacheManager = require('../middlewares/cacheManager.js');
+const likeController = require('../controllers/likeController');
 
 exports.getPatriotIndex = (req, res) => {
   logger.info('[SubjectController] getPatriotIndex' +
@@ -286,14 +286,16 @@ var fetchPosts = (requestId, lastTimestamp, skipCount, creatorId, birthId) =>
       .limit(100)
       .then((nextPostsList) => {
         for (var x = 0; x < nextPostsList.length; x++) {
-          promiseList.push(getPostVotes(nextPostsList[x], birthId));
+          promiseList.push(
+            likeController.getPostLikes(nextPostsList[x], birthId)
+          );
         }
         return Promise.all(promiseList);
       })
       .then((posts) => {
         result = {
           requestId: requestId,
-          posts: posts.slice(0, 10)
+          list: posts.slice(0, 10)
         };
         return cacheManager.saveInCache(requestId, skipCount, posts);
       })
@@ -308,21 +310,3 @@ var fetchPosts = (requestId, lastTimestamp, skipCount, creatorId, birthId) =>
         reject(err);
       });
   });
-
-var getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
-  var newPost = post.toObject();
-  newPost.votes = newPost.upVotes - newPost.downVotes;
-
-  Vote.findOne({
-      birthId: birthId,
-      postId: newPost._id
-    }).exec()
-    .then((vote) => {
-      newPost.opinion = (vote == null) ? 0 : vote.value;
-      resolve(newPost);
-    })
-    .catch((err) => {
-      logger.warn('[ContentController] getPostVotes:findOne - ' + err);
-      reject(err);
-    });
-});

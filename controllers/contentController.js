@@ -11,6 +11,7 @@ var shortid = require('shortid');
 var moment = require('moment');
 
 const cacheManager = require('../middlewares/cacheManager.js');
+const likeController = require('../controllers/likeController');
 
 var diskStorage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -29,7 +30,6 @@ var upload = multer({
 
 var Subject = require('../models/subject');
 var Post = require('../models/post');
-var Vote = require('../models/vote');
 var config = require('config');
 
 exports.addTextPost = (req, res) => {
@@ -44,8 +44,7 @@ exports.addTextPost = (req, res) => {
     contentType: 'TO',
     text: postContent,
     imageId: '',
-    upVotes: 0,
-    downVotes: 0,
+    likes: 0,
     comments: 0,
     isCensored: false,
     isGenerated: req.body.generate
@@ -84,8 +83,7 @@ exports.addComboPost = (req, res) => {
         contentType: 'IT',
         text: postContent,
         imageId: filename + '',
-        upVotes: 0,
-        downVotes: 0,
+        likes: 0,
         comments: 0,
         isCensored: false,
         isGenerated: req.body.generate
@@ -131,14 +129,16 @@ exports.getNextPosts = (req, res) => {
     .exec()
     .then((nextPostsList) => {
       for (var x = 0; x < nextPostsList.length; x++) {
-        promiseList.push(getPostVotes(nextPostsList[x], birthId));
+        promiseList.push(
+          likeController.getPostLikes(nextPostsList[x], birthId)
+        );
       }
       return Promise.all(promiseList);
     })
     .then((posts) => {
       result = {
         requestId: req.query.requestId,
-        posts: posts.slice(0, 10)
+        list: posts.slice(0, 10)
       };
       return cacheManager.saveInCache(req.query.requestId, skipCount, posts);
     })
@@ -213,24 +213,6 @@ getSubjectName = birthId => new Promise((resolve, reject) => {
     })
     .catch((err) => {
       logger.warn('[ContentController] getSubjectName:findOne - ' + err);
-      reject(err);
-    });
-});
-
-getPostVotes = (post, birthId) => new Promise((resolve, reject) => {
-  var newPost = post.toObject();
-  newPost.votes = newPost.upVotes - newPost.downVotes;
-
-  Vote.findOne({
-      birthId: birthId,
-      postId: newPost._id
-    }).exec()
-    .then((vote) => {
-      newPost.opinion = (vote == null) ? 0 : vote.value;
-      resolve(newPost);
-    })
-    .catch((err) => {
-      logger.warn('[ContentController] getPostVotes:findOne - ' + err);
       reject(err);
     });
 });

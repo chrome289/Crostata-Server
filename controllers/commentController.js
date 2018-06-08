@@ -92,7 +92,7 @@ exports.getComments = function(req, res) {
     .then((comments) => {
       result = {
         requestId: req.query.requestId,
-        comments: comments.slice(0, 10)
+        list: comments.slice(0, 10)
       };
       return cacheManager.saveInCache(req.query.requestId, skipCount, comments);
     })

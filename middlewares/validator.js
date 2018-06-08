@@ -181,19 +181,18 @@ router.get('/content/postedImage', [
   }
 });
 
-router.post('/opinion/vote', [
+router.post('/opinion/like', [
   check('birthId').isInt({
     min: 0,
     max: 99999999
-  }),
-  check('value').isIn(['-1', '1'])
+  })
 ], (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     next();
   } else {
     //validation failed.
-    logger.warn('[Validator] [POST]opinion:vote - ' +
+    logger.warn('[Validator] [POST]opinion:like - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -201,7 +200,7 @@ router.post('/opinion/vote', [
   }
 });
 
-router.delete('/opinion/vote', [
+router.delete('/opinion/like', [
   check('birthId').isInt({
     min: 0,
     max: 99999999
@@ -213,7 +212,7 @@ router.delete('/opinion/vote', [
     next();
   } else {
     //validation failed.
-    logger.warn('[Validator] [DELETE]opinion:vote - ' +
+    logger.warn('[Validator] [DELETE]opinion:like - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -221,7 +220,7 @@ router.delete('/opinion/vote', [
   }
 });
 
-router.get('/opinion/voteTotal', [
+router.get('/opinion/likeTotal', [
   check('postId').exists().isAlphanumeric()
 ], (req, res, next) => {
   const errors = validationResult(req);
@@ -229,7 +228,7 @@ router.get('/opinion/voteTotal', [
     next();
   } else {
     //validation failed.
-    logger.warn('[Validator] [GET]opinion:voteTotal - ' +
+    logger.warn('[Validator] [GET]opinion:likeTotal - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
@@ -237,7 +236,7 @@ router.get('/opinion/voteTotal', [
   }
 });
 
-router.get('/opinion/votePerPost', [
+router.get('/opinion/likePerPost', [
   check('birthId').isInt({
     min: 0,
     max: 99999999
@@ -249,7 +248,7 @@ router.get('/opinion/votePerPost', [
     next();
   } else {
     //validation failed.
-    logger.warn('[Validator] [GET]opinion:votePerPost - ' +
+    logger.warn('[Validator] [GET]opinion:likePerPost - ' +
       JSON.stringify({
         errors: errors.mapped()
       }));
