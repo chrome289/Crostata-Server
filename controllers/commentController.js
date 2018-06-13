@@ -9,7 +9,6 @@ const Post = require('../models/post');
 const Comment = require('../models/comment');
 const Subject = require('../models/subject');
 
-var config = require('config');
 const cacheManager = require('../middlewares/cacheManager.js');
 
 exports.addComment = function(req, res) {

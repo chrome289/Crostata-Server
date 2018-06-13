@@ -1,11 +1,19 @@
 const express = require('express');
 const path = require('path');
 const logger = require('../utils/logger');
-const bcrypt = require('bcrypt');
 const multer = require('multer');
 const fs = require('fs');
 const util = require('util');
 const sharp = require('sharp');
+
+const AWS = require('aws-sdk');
+AWS.config.setPromisesDependency(require('bluebird'));
+AWS.config.update({
+  'accessKeyId': process.env.AWS_ACCESS_KEY_ID,
+  'secretAccessKey': process.env.AWS_SECRET_ACCESS_KEY,
+  'region': process.env.AWS_REGION
+});
+var s3 = new AWS.S3();
 
 var shortid = require('shortid');
 var moment = require('moment');
@@ -30,7 +38,6 @@ var upload = multer({
 
 var Subject = require('../models/subject');
 var Post = require('../models/post');
-var config = require('config');
 
 exports.addTextPost = (req, res) => {
   logger.info('[ContentController] Adding textpost for subject %s',
@@ -148,7 +155,7 @@ exports.getNextPosts = (req, res) => {
       res.status(200).json(result);
     })
     .catch((error) => {
-      logger.warn('[ContentController] getNextPosts:find - ' + err);
+      logger.warn('[ContentController] getNextPosts:find - ' + error);
       res.status(500).send();
     });
 };
@@ -159,25 +166,38 @@ exports.getPostedImage = (req, res) => {
     '- Image %s requested', req.query.imageId);
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
-  sharp('./posts/images/' + req.query.imageId)
-    .resize(dimen, null)
-    .jpeg({
-      quality: quality
-    })
-    .withoutEnlargement(true)
-    .toBuffer()
-    .then((data) => {
-      logger.verbose('[ContentController] getPostedImage:sharp ' +
-        '- image fetched');
-      res.set('Content-Type', 'image/jpg');
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      logger.warn('[ContentController] getPostedImage:sharp - ' + err);
+  var readParams = {
+    Bucket: process.env.BUCKET,
+    Key: 'posts/images/' + req.query.imageId
+  };
+  s3.getObject(readParams, (err, data) => {
+    if (err) {
+      logger.error(err);
       res.status(500).send({
         success: false
       });
-    });
+    } else {
+      sharp(data.Body)
+        .resize(dimen, null)
+        .jpeg({
+          quality: quality
+        })
+        .withoutEnlargement(true)
+        .toBuffer()
+        .then((data) => {
+          logger.verbose('[ContentController] getPostedImage:sharp ' +
+            '- image fetched');
+          res.set('Content-Type', 'image/jpg');
+          res.status(200).send(data);
+        })
+        .catch((err) => {
+          logger.warn('[ContentController] getPostedImage:sharp - ' + err);
+          res.status(500).send({
+            success: false
+          });
+        });
+    }
+  });
 };
 
 exports.getImageMetadata = (req, res) => {

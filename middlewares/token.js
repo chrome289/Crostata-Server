@@ -2,10 +2,6 @@ var express = require('express');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
 
-var config = require('config');
-
-const tokenSecret = config.secret;
-
 var logger = require('../utils/logger');
 
 router.use('/', (req, res, next) => {
@@ -13,6 +9,8 @@ router.use('/', (req, res, next) => {
     next();
   } else {
     var token = req.headers.authorization; //.split(' ')[1];
+    const tokenSecret = process.env.secret;
+    
     if (token.includes(' ')) {
       token = token.split(' ')[1];
     }

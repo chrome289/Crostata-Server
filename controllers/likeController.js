@@ -9,8 +9,6 @@ const Post = require('../models/post');
 const Like = require('../models/like');
 const Subject = require('../models/subject');
 
-var config = require('config');
-
 exports.addLike = function(req, res) {
   logger.info('[LikeController] addLike ' +
     '- Adding like for post %s and subject %s',

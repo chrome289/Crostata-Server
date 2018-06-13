@@ -6,9 +6,7 @@ var bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 
 var Subject = require('../models/subject');
-var config = require('config');
 
-const tokenSecret = config.secret;
 const professions = ['PEASANT', 'MERCHANT', 'SOLDIER',
   'REBEL', 'OLIGARCH', 'NONE'
 ];
@@ -61,6 +59,8 @@ var generateToken = birthId => {
     iss: 'Crostata Server',
     sub: birthId.toString()
   };
+
+  const tokenSecret = process.env.secret;
   const token = jwt.sign(payload, tokenSecret, {
     expiresIn: 86400
   });

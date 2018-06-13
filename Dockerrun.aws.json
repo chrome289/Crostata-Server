@@ -1,0 +1,14 @@
+{
+"AWSEBDockerrunVersion": "1",
+"Image": {
+  "Name": "chrome289/crostata",
+  "Update": "true"
+},
+"Ports": [
+  {
+    "ContainerPort": "3000"
+  }
+],
+"Volumes": [
+  ]
+}

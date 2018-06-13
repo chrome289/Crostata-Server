@@ -4,13 +4,20 @@ const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const sharp = require('sharp');
 
+const AWS = require('aws-sdk');
+AWS.config.setPromisesDependency(require('bluebird'));
+AWS.config.update({
+  'accessKeyId': process.env.AWS_ACCESS_KEY_ID,
+  'secretAccessKey': process.env.AWS_SECRET_ACCESS_KEY,
+  'region': process.env.AWS_REGION
+});
+var s3 = new AWS.S3();
+
 var moment = require('moment');
 
 const Post = require('../models/post');
 const Comment = require('../models/comment');
 const Subject = require('../models/subject');
-
-var config = require('config');
 
 const cacheManager = require('../middlewares/cacheManager.js');
 const likeController = require('../controllers/likeController');
@@ -92,25 +99,38 @@ exports.getProfileImage = (req, res) => {
     ' - Get profile image for subject %s', req.query.birthId);
   const dimen = Number(req.query.dimen);
   const quality = Number(req.query.quality);
-  sharp('./images/' + req.query.birthId)
-    .resize(dimen, dimen)
-    .jpeg({
-      quality: quality
-    })
-    .withoutEnlargement(true)
-    .toBuffer()
-    .then((data) => {
-      logger.verbose('[SubjectController] getProfileImage:sharp' +
-        ' - Image %s sent', req.query.birthId);
-      res.set('Content-Type', 'image/jpg');
-      res.status(200).send(data);
-    })
-    .catch((reject) => {
-      logger.warn('[SubjectController] getProfileImage:sharp - %s', reject);
+  var readParams = {
+    Bucket: process.env.BUCKET,
+    Key: 'images/' + req.query.birthId
+  };
+  s3.getObject(readParams, (err, data) => {
+    if (err) {
+      logger.error(err);
       res.status(500).send({
         success: false
       });
-    });
+    } else {
+      sharp(data.Body)
+        .resize(dimen, dimen)
+        .jpeg({
+          quality: quality
+        })
+        .withoutEnlargement(true)
+        .toBuffer()
+        .then((data) => {
+          logger.verbose('[SubjectController] getProfileImage:sharp' +
+            ' - Image %s sent', req.query.birthId);
+          res.set('Content-Type', 'image/jpg');
+          res.status(200).send(data);
+        })
+        .catch((reject) => {
+          logger.warn('[SubjectController] getProfileImage:sharp - %s', reject);
+          res.status(500).send({
+            success: false
+          });
+        });
+    }
+  });
 };
 
 exports.getInfo = (req, res) => {

@@ -30,7 +30,7 @@ const cacheManager = require('./middlewares/cacheManager');
 const logger = require('./utils/logger');
 
 //config
-const config = require('config');
+const config = require('dotenv').config();
 
 //TODO remove delay later
 const app = express();
@@ -50,7 +50,7 @@ if (!module.parent) {
 
 //database
 mongoose.Promise = require('bluebird');
-mongoose.connect(config.database);
+mongoose.connect(process.env.MONGO_URL);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -85,7 +85,7 @@ app.use('/api/v1', cacheManager.router);
 
 //setting up routes hierachy
 app.use('/', index);
-app.use('/bot', bot);
+//app.use('/bot', bot);
 
 app.use('/api/v1/subject', subject);
 app.use('/api/v1/auth', auth.router);

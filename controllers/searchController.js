@@ -7,8 +7,6 @@ const moment = require('moment');
 const Subject = require('../models/subject');
 const cacheManager = require('../middlewares/cacheManager.js');
 
-const config = require('config');
-
 exports.search = (req, res) => {
   const searchText = '.*' + req.query.searchText + '.*';
   const skipCount = req.query.skipCount;

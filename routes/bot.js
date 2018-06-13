@@ -1,8 +1,18 @@
 var express = require('express');
 var router = express.Router();
+/*
 var randomName = require('node-random-name');
 var randomNumberGen = require('random-seed');
 var randomPasswordGen = require('generate-password');
+
+const AWS = require('aws-sdk');
+AWS.config.setPromisesDependency(require('bluebird'));
+AWS.config.update({
+  'accessKeyId': process.env.AWS_ACCESS_KEY_ID,
+  'secretAccessKey': process.env.AWS_SECRET_ACCESS_KEY,
+  'region': process.env.AWS_REGION
+});
+var s3 = new AWS.S3();
 
 var Chance = require('chance');
 var chance = new Chance();
@@ -65,36 +75,53 @@ router.get('/generate', (req, res) => {
     });
 });
 
-router.get('/setProfileImages', (req, res) => {
-  Subject.find({})
+router.get('/users', (req, res) => {
+  Subject.find({}, {
+      birthId: 1,
+      _id: 0
+    })
     .then((subjects) => {
-      for (var x = 0; x < subjects.length; x++) {
-        const id = subjects[x].birthId;
-        const aNumber = chance.natural({
-          min: 1,
-          max: 83
-        });
-        fs.readFile('./images/image (' + aNumber + ').jpg', (err2, data) => {
-          if (err2) {
-            logger.error(err2);
-          } else {
-            fs.writeFile('./images/' + id, data, (err3) => {
-              if (err3) {
-                logger.error(err3);
-              } else {
-                logger.debug('done');
-                //res.send('done');
-              }
-            });
-          }
-        });
-      }
+      res.status(200).json(subjects);
     })
     .catch((err) => {
-      logger.error(err);
+      res.status(400).send(err);
     });
 });
 
+router.get('/setProfileImages', (req, res) => {
+  const id = req.query.birthId;
+  const aNumber = chance.natural({
+    min: 1,
+    max: 83
+  });
+  generateImageFile(aNumber, id);
+  res.status(200).send('done');
+});
+
+var generateImageFile = (aNumber, birthId) => {
+  var readParams = {
+    Bucket: process.env.BUCKET,
+    Key: 'images/image (' + aNumber + ').jpg'
+  };
+  s3.getObject(readParams, (err, data) => {
+    if (err) {
+      logger.error(err);
+    } else {
+      var putParams = {
+        Bucket: process.env.BUCKET,
+        Body: data.Body,
+        Key: 'images/' + birthId
+      };
+      s3.putObject(putParams, (err2, data2) => {
+        if (err2) {
+          logger.error(err2);
+        } else {
+          logger.verbose('done');
+        }
+      });
+    }
+  });
+};
 //probabilty for professions
 var getProfessionID = randomNumber => {
   if (randomNumber % 5 === 0) {
@@ -193,6 +220,6 @@ var getPatriotIndex = (newSubject, randomNumber) => {
   }
 
   return result;
-};
+};*/
 
 module.exports = router;

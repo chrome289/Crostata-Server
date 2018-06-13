@@ -66,5 +66,13 @@ posts/
 # images
 images/
 
+#mongo data
+mongo backup/
+
 #postman sample data
 Postman/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

@@ -9,7 +9,6 @@ const cache = new NodeCache();
 
 const Subject = require('../models/subject');
 
-const config = require('config');
 var Chance = require('chance');
 var chance = new Chance();
 
